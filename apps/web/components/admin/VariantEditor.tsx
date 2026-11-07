@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ProductVariant } from "@yourstore/shared";
+import type { ProductVariant } from "@yourstore/shared";
 
 interface VariantEditorProps {
   variants: ProductVariant[];
@@ -37,7 +37,7 @@ export function VariantEditor({
 
   const handleUpdateVariant = (
     index: number,
-    field: keyof ProductVariant | "size" | "color",
+    field: string,
     value: string | number | undefined,
   ) => {
     const updated = [...variants];

@@ -2,13 +2,13 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { apiClient } from "../../../lib/api";
-import { useToast } from "../../../components/Toast";
-import { ConfirmDialog } from "../../../components/ConfirmDialog";
-import { Product } from "@yourstore/shared";
+import { apiClient } from "@/lib/api";
+import { useToast } from "@/components/Toast";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import type { AdminProduct } from "@/lib/adminTypes";
 
 interface AdminProductsResponse {
-  products: Product[];
+  products: AdminProduct[];
   pagination: {
     page: number;
     limit: number;
@@ -20,7 +20,7 @@ interface AdminProductsResponse {
 export default function AdminProductsPage() {
   const { showToast } = useToast();
 
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<AdminProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -33,7 +33,7 @@ export default function AdminProductsPage() {
   const [updatingStock, setUpdatingStock] = useState(false);
 
   // Soft delete confirm dialog
-  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const [productToDelete, setProductToDelete] = useState<AdminProduct | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   // Search debounce
@@ -75,7 +75,7 @@ export default function AdminProductsPage() {
     void fetchProducts();
   }, [fetchProducts]);
 
-  const handleStockSave = async (product: Product) => {
+  const handleStockSave = async (product: AdminProduct) => {
     if (stockValue < 0) {
       showToast("Stock cannot be negative", "error");
       return;

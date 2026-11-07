@@ -2,10 +2,10 @@
 
 import React, { useState, useRef } from "react";
 import Image from "next/image";
-import { apiClient } from "../../../lib/api";
-import { compressImage } from "../../../lib/compress";
-import { useToast } from "../../../components/Toast";
-import { Image as ProductImage } from "@yourstore/shared";
+import { apiClient } from "@/lib/api";
+import { compressImage } from "@/lib/compress";
+import { useToast } from "@/components/Toast";
+import type { ProductImage } from "@yourstore/shared";
 
 interface MultiImageUploadProps {
   images: ProductImage[];

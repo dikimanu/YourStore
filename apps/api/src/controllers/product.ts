@@ -247,6 +247,26 @@ export async function adminListProducts(req: Request, res: Response): Promise<vo
 }
 
 /**
+ * Admin: Get a single product by ID (including inactive/archived).
+ * Used by the admin edit page to pre-populate the form.
+ */
+export async function adminGetProduct(req: Request, res: Response): Promise<void> {
+  const { id } = req.params;
+
+  const product = await Product.findById(id).lean();
+  if (!product) {
+    throw new NotFoundError("Product not found");
+  }
+
+  const doc = product as unknown as Record<string, unknown>;
+  doc["id"] = doc["_id"]?.toString();
+  delete doc["_id"];
+  delete doc["__v"];
+
+  res.status(200).json({ product: doc });
+}
+
+/**
  * Admin: Create a new product.
  */
 export async function adminCreateProduct(req: Request, res: Response): Promise<void> {

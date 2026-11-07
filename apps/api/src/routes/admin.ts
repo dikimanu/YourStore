@@ -9,6 +9,7 @@ import { authenticate, requireRole } from "../middleware/auth.js";
 import { validateBody, validateQuery } from "../middleware/validate.js";
 import {
   adminListProducts,
+  adminGetProduct,
   adminCreateProduct,
   adminUpdateProduct,
   adminDeleteProduct,
@@ -30,6 +31,7 @@ router.post(
 
 // Product management
 router.get("/products", validateQuery(ProductQuerySchema), asyncHandler(adminListProducts));
+router.get("/products/:id", asyncHandler(adminGetProduct));
 router.post("/products", validateBody(CreateProductInputSchema), asyncHandler(adminCreateProduct));
 router.put("/products/:id", validateBody(UpdateProductInputSchema), asyncHandler(adminUpdateProduct));
 router.delete("/products/:id", asyncHandler(adminDeleteProduct));

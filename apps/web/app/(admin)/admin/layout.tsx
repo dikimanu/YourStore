@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { apiClient } from "../../../lib/api";
+import { apiClient } from "@/lib/api";
 import { User } from "@yourstore/shared";
 
 interface AdminRoleGuardProps {

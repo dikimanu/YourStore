@@ -2,24 +2,23 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { apiClient } from "../../../lib/api";
-import { useToast } from "../../../components/Toast";
-import { MultiImageUpload } from "./MultiImageUpload";
-import { VariantEditor } from "./VariantEditor";
-import { CategoryAdaptiveFields } from "./CategoryAdaptiveFields";
-import {
+import { apiClient } from "@/lib/api";
+import { useToast } from "@/components/Toast";
+import { MultiImageUpload } from "@/components/admin/MultiImageUpload";
+import { VariantEditor } from "@/components/admin/VariantEditor";
+import { CategoryAdaptiveFields } from "@/components/admin/CategoryAdaptiveFields";
+import type {
   CreateProductInput,
-  Product,
   Category,
-  CATEGORIES,
-  LISTING_TYPES,
-  ListingType,
-  Image,
+  ProductImage,
   ProductVariant,
 } from "@yourstore/shared";
+import { CATEGORIES, LISTING_TYPES } from "@yourstore/shared";
+import type { ListingType } from "@yourstore/shared";
+import type { AdminProduct } from "@/lib/adminTypes";
 
 interface ProductFormProps {
-  initialProduct?: Product;
+  initialProduct?: AdminProduct;
   isEdit?: boolean;
 }
 
@@ -37,7 +36,7 @@ export function ProductForm({ initialProduct, isEdit = false }: ProductFormProps
   const [listingType, setListingType] = useState<ListingType>(
     initialProduct?.listingType || (category === "vehicles" ? "enquiry" : "purchasable"),
   );
-  const [images, setImages] = useState<Image[]>(initialProduct?.images || []);
+  const [images, setImages] = useState<ProductImage[]>(initialProduct?.images || []);
   const [variants, setVariants] = useState<ProductVariant[]>(initialProduct?.variants || []);
   const [attributes, setAttributes] = useState<Record<string, string | number | undefined>>(
     (initialProduct?.attributes as Record<string, string | number | undefined>) || {},
@@ -70,6 +69,7 @@ export function ProductForm({ initialProduct, isEdit = false }: ProductFormProps
     setSubmitting(true);
     try {
       const payload: CreateProductInput = {
+        isActive: initialProduct?.isActive ?? true,
         title: title.trim(),
         description: description.trim(),
         category,
@@ -78,7 +78,7 @@ export function ProductForm({ initialProduct, isEdit = false }: ProductFormProps
         images,
         attributes,
         listingType,
-        variants: category === "clothing" ? variants : undefined,
+        variants: category === "clothing" ? variants : [],
         stock: category === "clothing" ? undefined : stock,
       };
 

@@ -60,6 +60,9 @@ export type CategoryAttributes = {
 };
 
 // ---- Variant ----
+// Convenience alias: image object stored on a product
+export type ProductImage = z.infer<typeof ImageSchema>;
+
 export const VariantSchema = z.object({
   sku: z.string().min(1),
   options: z.object({
@@ -70,6 +73,8 @@ export const VariantSchema = z.object({
   stock: z.number().int().nonnegative(),
 });
 export type Variant = z.infer<typeof VariantSchema>;
+// Convenience alias used by admin UI components
+export type ProductVariant = Variant;
 
 // ---- Product ----
 export const ProductSchema = z.object({
