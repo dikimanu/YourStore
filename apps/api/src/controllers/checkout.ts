@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { Types } from "mongoose";
 import Stripe from "stripe";
 import { CheckoutStripeInput } from "@yourstore/shared";
 import { env } from "../env.js";
@@ -18,7 +19,7 @@ import {
   UnauthorizedError,
 } from "../lib/errors.js";
 import { logger } from "../lib/logger.js";
-
+ 
 // Stripe minimum charge in INR is ~₹50 (5000 paise)
 const MIN_STRIPE_AMOUNT_INR = 50;
 
@@ -55,10 +56,7 @@ export async function createStripeCheckout(req: Request, res: Response): Promise
 
   // Validate Stripe minimum charge amount
   if (order.pricing.total < MIN_STRIPE_AMOUNT_INR) {
-    // Roll back order and resources
-    await restoreStock(order);
-    await releaseCoupon(order);
-    await Order.updateOne(
+    const cancelledOrder = await Order.findOneAndUpdate(
       { _id: order._id, status: "PendingPayment" },
       {
         $set: { status: "Cancelled" },
@@ -71,7 +69,21 @@ export async function createStripeCheckout(req: Request, res: Response): Promise
           },
         },
       },
+      { new: false },
     );
+
+    if (cancelledOrder) {
+      const rollbackResults = await Promise.allSettled([
+        restoreStock(cancelledOrder),
+        releaseCoupon(cancelledOrder),
+      ]);
+      for (const res of rollbackResults) {
+        if (res.status === "rejected") {
+          logger.error({ err: res.reason }, "Failed to roll back resources after below-minimum check");
+        }
+      }
+    }
+
     throw new BadRequestError(
       `Order total ₹${order.pricing.total} is below the minimum Stripe checkout amount of ₹${MIN_STRIPE_AMOUNT_INR}.`,
     );
@@ -84,19 +96,21 @@ export async function createStripeCheckout(req: Request, res: Response): Promise
     const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
 
     for (const item of order.items) {
+      const product_data: Stripe.Checkout.SessionCreateParams.LineItem.PriceData.ProductData = {
+        name: item.title,
+      };
+      if (item.image && item.image.startsWith("https://")) {
+        product_data.images = [item.image];
+      }
+
       const lineItem: Stripe.Checkout.SessionCreateParams.LineItem = {
         price_data: {
           currency: "inr",
-          product_data: {
-            name: item.title,
-          },
+          product_data,
           unit_amount: Math.round(item.unitPrice * 100), // in paise
         },
         quantity: item.qty,
       };
-      if (item.image) {
-        lineItem.price_data!.product_data!.images = [item.image];
-      }
       line_items.push(lineItem);
     }
 
@@ -127,9 +141,10 @@ export async function createStripeCheckout(req: Request, res: Response): Promise
     }
 
     // Discounts
+    let discountPaise = 0;
     const discounts: Stripe.Checkout.SessionCreateParams.Discount[] = [];
     if (order.pricing.discount > 0) {
-      const discountPaise = Math.round(order.pricing.discount * 100);
+      discountPaise = Math.round(order.pricing.discount * 100);
       const couponObj = await stripe.coupons.create({
         amount_off: discountPaise,
         currency: "inr",
@@ -137,6 +152,22 @@ export async function createStripeCheckout(req: Request, res: Response): Promise
         name: order.couponCode ? `Discount (${order.couponCode})` : "Order Discount",
       });
       discounts.push({ coupon: couponObj.id });
+    }
+
+    // Compute sum of line_items minus discount
+    let lineItemsSumPaise = 0;
+    for (const line of line_items) {
+      const unitAmt = line.price_data?.unit_amount ?? 0;
+      const qty = line.quantity ?? 1;
+      lineItemsSumPaise += unitAmt * qty;
+    }
+    const computedStripeTotalPaise = lineItemsSumPaise - discountPaise;
+    const expectedOrderTotalPaise = Math.round(order.pricing.total * 100);
+
+    if (computedStripeTotalPaise !== expectedOrderTotalPaise) {
+      throw new BadRequestError(
+        `Stripe checkout line items total (₹${computedStripeTotalPaise / 100}) does not match order pricing total (₹${order.pricing.total})`,
+      );
     }
 
     const expiresAtUnix = Math.floor(Date.now() / 1000) + 30 * 60; // 30 minutes from now
@@ -161,7 +192,6 @@ export async function createStripeCheckout(req: Request, res: Response): Promise
     const session = await stripe.checkout.sessions.create(sessionParams);
 
     // Save stripeSessionId on the order
-    order.payment.stripeSessionId = session.id;
     await Order.updateOne(
       { _id: order._id },
       { $set: { "payment.stripeSessionId": session.id } },
@@ -176,11 +206,7 @@ export async function createStripeCheckout(req: Request, res: Response): Promise
     logger.error({ err: stripeErr }, "Stripe checkout session creation failed");
 
     // Compensate on Stripe failure:
-    await restoreStock(order);
-    await releaseCoupon(order);
-
-    // Mark order cancelled atomically
-    await Order.updateOne(
+    const cancelledOrder = await Order.findOneAndUpdate(
       { _id: order._id, status: "PendingPayment" },
       {
         $set: { status: "Cancelled" },
@@ -193,7 +219,44 @@ export async function createStripeCheckout(req: Request, res: Response): Promise
           },
         },
       },
+      { new: false },
     );
+
+    if (cancelledOrder) {
+      const rollbackPromises: Promise<unknown>[] = [
+        restoreStock(cancelledOrder),
+        releaseCoupon(cancelledOrder),
+      ];
+
+      // If user's cart was cleared, restore it from the order items
+      const userDoc = await User.findById(userId);
+      if (userDoc && (!userDoc.cart || userDoc.cart.length === 0)) {
+        const cartItemsToRestore = cancelledOrder.items.map((i) => {
+          const itemObj: { productId: Types.ObjectId; variantSku?: string; qty: number } = {
+            productId: i.productId,
+            qty: i.qty,
+          };
+          if (i.variantSku) {
+            itemObj.variantSku = i.variantSku;
+          }
+          return itemObj;
+        });
+        rollbackPromises.push(
+          User.updateOne({ _id: userId }, { $set: { cart: cartItemsToRestore } }),
+        );
+      }
+
+      const results = await Promise.allSettled(rollbackPromises);
+      for (const res of results) {
+        if (res.status === "rejected") {
+          logger.error({ err: res.reason }, "Failed to roll back resources during Stripe checkout failure compensation");
+        }
+      }
+    }
+
+    if (stripeErr instanceof BadRequestError) {
+      throw stripeErr;
+    }
 
     throw new InternalServerError("Failed to initialize Stripe checkout session");
   }
@@ -289,6 +352,16 @@ export async function handleStripeWebhook(req: Request, res: Response): Promise<
           // Clear user's cart now that order is paid and placed
           await User.updateOne({ _id: updatedOrder.user }, { $set: { cart: [] } });
           logger.info({ orderId, eventId: event.id }, "Order placed and user cart cleared");
+        } else {
+          logger.error(
+            {
+              orderId,
+              eventId: event.id,
+              sessionId: session.id,
+              paymentIntentId,
+            },
+            "PAID session for an order that is not PendingPayment: manual refund needed",
+          );
         }
       }
     } else if (event.type === "checkout.session.expired") {
