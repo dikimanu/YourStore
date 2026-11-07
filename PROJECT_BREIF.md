@@ -1,7 +1,7 @@
 # YourStore: Antigravity Build Brief
 
 By Satyabrata Pal. Save Part A as `PROJECT_BRIEF.md` in your repo root, then paste the Part B phase prompts into Antigravity one at a time.
-
+ 
 ## How to use this (free-quota friendly)
 
 1. Create an empty GitHub repo and open it in Antigravity. Save Part A below as `PROJECT_BRIEF.md` in the repo root.

@@ -1,7 +1,7 @@
 # YourStore
 
 A production-quality, multi-category e-commerce platform with a customer storefront and an admin panel, built as a portfolio project.
-
+ 
 ## Stack
 
 | Layer      | Technology                              |
