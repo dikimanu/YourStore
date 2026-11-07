@@ -731,3 +731,136 @@ export type AdminStatsResponse = {
 
 
 
+
+// ---- Admin Lists Schemas ----
+export const AdminCustomersQuerySchema = z.object({
+  search: z.string().trim().optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+});
+export type AdminCustomersQuery = z.infer<typeof AdminCustomersQuerySchema>;
+
+export const AdminCustomerItemSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+  role: UserRoleSchema,
+  emailVerified: z.boolean(),
+  createdAt: z.coerce.date(),
+  orderCount: z.number().int().nonnegative(),
+  totalSpent: z.number().nonnegative(),
+});
+export type AdminCustomerItem = z.infer<typeof AdminCustomerItemSchema>;
+
+export const AdminCustomersResponseSchema = z.object({
+  customers: z.array(AdminCustomerItemSchema),
+  total: z.number().int().nonnegative(),
+  page: z.number().int().min(1),
+  totalPages: z.number().int().nonnegative(),
+});
+export type AdminCustomersResponse = z.infer<typeof AdminCustomersResponseSchema>;
+
+export const AdminEnquiriesQuerySchema = z.object({
+  type: z.enum(["enquiry", "visit"]).optional(),
+  search: z.string().trim().optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+});
+export type AdminEnquiriesQuery = z.infer<typeof AdminEnquiriesQuerySchema>;
+
+export const AdminEnquiryItemSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  phone: z.string(),
+  message: z.string(),
+  type: z.enum(["enquiry", "visit"]),
+  preferredDate: z.coerce.date().optional(),
+  product: z.object({
+    _id: z.string().optional(),
+    id: z.string().optional(),
+    title: z.string(),
+    slug: z.string(),
+  }),
+  user: z.string().optional(),
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date().optional(),
+});
+export type AdminEnquiryItem = z.infer<typeof AdminEnquiryItemSchema>;
+
+export const AdminEnquiriesResponseSchema = z.object({
+  enquiries: z.array(AdminEnquiryItemSchema),
+  total: z.number().int().nonnegative(),
+  page: z.number().int().min(1),
+  totalPages: z.number().int().nonnegative(),
+});
+export type AdminEnquiriesResponse = z.infer<typeof AdminEnquiriesResponseSchema>;
+
+export const AdminAuditLogsQuerySchema = z.object({
+  action: z.string().trim().optional(),
+  targetType: z.string().trim().optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+});
+export type AdminAuditLogsQuery = z.infer<typeof AdminAuditLogsQuerySchema>;
+
+export const AdminAuditLogItemSchema = z.object({
+  id: z.string(),
+  actor: z.union([
+    z.object({
+      _id: z.string().optional(),
+      id: z.string().optional(),
+      name: z.string().optional(),
+    }),
+    z.string(),
+  ]),
+  action: z.string(),
+  targetType: z.string(),
+  targetId: z.string().nullable().optional(),
+  meta: z.record(z.unknown()).nullable().optional(),
+  at: z.coerce.date(),
+});
+export type AdminAuditLogItem = z.infer<typeof AdminAuditLogItemSchema>;
+
+export const AdminAuditLogsResponseSchema = z.object({
+  logs: z.array(AdminAuditLogItemSchema),
+  total: z.number().int().nonnegative(),
+  page: z.number().int().min(1),
+  totalPages: z.number().int().nonnegative(),
+});
+export type AdminAuditLogsResponse = z.infer<typeof AdminAuditLogsResponseSchema>;
+
+export const AdminOrdersQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  orderId: z.string().trim().optional(),
+  email: z.string().trim().optional(),
+  status: z.enum(ORDER_STATUSES).optional(),
+  from: z.string().datetime({ offset: true }).or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).optional(),
+  to: z.string().datetime({ offset: true }).or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).optional(),
+  paymentMethod: z.enum(["stripe", "cod"]).optional(),
+  paymentStatus: z.enum(["pending", "paid", "failed", "refunded"]).optional(),
+  search: z.string().trim().optional(),
+});
+export type AdminOrdersQuery = z.infer<typeof AdminOrdersQuerySchema>;
+
+export const AdminOrdersResponseSchema = z.object({
+  orders: z.array(z.record(z.unknown())),
+  total: z.number().int().nonnegative(),
+  page: z.number().int().min(1),
+  totalPages: z.number().int().nonnegative(),
+});
+export type AdminOrdersResponse = {
+  orders: Array<{
+    id?: string;
+    _id?: string;
+    user?: unknown;
+    status: OrderStatus;
+    payment: { method: "stripe" | "cod"; status: string };
+    pricing: { total: number };
+    createdAt: Date | string;
+    [key: string]: unknown;
+  }>;
+  total: number;
+  page: number;
+  totalPages: number;
+};

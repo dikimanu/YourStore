@@ -88,7 +88,7 @@ export default function AdminLayout({ children }: AdminRoleGuardProps) {
           <span className="text-xs uppercase tracking-wider font-semibold text-blue-600 dark:text-blue-400">
             Admin Panel
           </span>
-          <h1 className="text-2xl font-bold">Catalog Management</h1>
+          <h1 className="text-2xl font-bold">Store Administration</h1>
         </div>
         <div className="flex items-center gap-4 text-sm">
           <span className="text-gray-500 dark:text-gray-400">
@@ -123,6 +123,24 @@ export default function AdminLayout({ children }: AdminRoleGuardProps) {
             className="px-3 py-1.5 rounded-md bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
           >
             Coupons
+          </Link>
+          <Link
+            href="/admin/customers"
+            className="px-3 py-1.5 rounded-md bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+          >
+            Customers
+          </Link>
+          <Link
+            href="/admin/enquiries"
+            className="px-3 py-1.5 rounded-md bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+          >
+            Enquiries
+          </Link>
+          <Link
+            href="/admin/audit-log"
+            className="px-3 py-1.5 rounded-md bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+          >
+            Audit Logs
           </Link>
           <Link
             href="/admin/products/new"

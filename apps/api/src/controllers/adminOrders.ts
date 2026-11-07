@@ -1,3 +1,4 @@
+import { escapeRegex } from "../lib/regex.js";
 import { Request, Response } from "express";
 import { Types } from "mongoose";
 import { OrderStatus, ORDER_STATUSES, AdminReturnDecision } from "@yourstore/shared";
@@ -59,6 +60,68 @@ export async function adminGetOrders(req: Request, res: Response): Promise<void>
     filter["status"] = status;
   }
 
+  // Filter by paymentMethod
+  const paymentMethod = typeof req.query["paymentMethod"] === "string" ? req.query["paymentMethod"].trim() : undefined;
+  if (paymentMethod === "stripe" || paymentMethod === "cod") {
+    filter["payment.method"] = paymentMethod;
+  }
+
+  // Filter by paymentStatus
+  const paymentStatus = typeof req.query["paymentStatus"] === "string" ? req.query["paymentStatus"].trim() : undefined;
+  if (paymentStatus && ["pending", "paid", "failed", "refunded"].includes(paymentStatus)) {
+    filter["payment.status"] = paymentStatus;
+  }
+
+  // Date range filters: from & to
+  const fromStr = typeof req.query["from"] === "string" ? req.query["from"].trim() : undefined;
+  const toStr = typeof req.query["to"] === "string" ? req.query["to"].trim() : undefined;
+  if (fromStr || toStr) {
+    const createdAtFilter: Record<string, Date> = {};
+    if (fromStr) {
+      const fromDate = new Date(fromStr);
+      if (!isNaN(fromDate.getTime())) {
+        createdAtFilter["$gte"] = fromDate;
+      }
+    }
+    if (toStr) {
+      const toDate = new Date(toStr.length === 10 ? toStr + "T23:59:59.999Z" : toStr);
+      if (!isNaN(toDate.getTime())) {
+        createdAtFilter["$lte"] = toDate;
+      }
+    }
+    if (Object.keys(createdAtFilter).length > 0) {
+      filter["createdAt"] = createdAtFilter;
+    }
+  }
+
+  // Search by order id or customer name/email
+  const search = typeof req.query["search"] === "string" ? req.query["search"].trim() : undefined;
+  if (search) {
+    const escaped = escapeRegex(search);
+    const searchRegex = new RegExp(escaped, "i");
+
+    const matchedUsers = await User.find({
+      $or: [{ name: { $regex: searchRegex } }, { email: { $regex: searchRegex } }],
+    }).select("_id").lean();
+    const matchedUserIds = matchedUsers.map((u) => u._id);
+
+    const orClauses: Record<string, unknown>[] = [];
+    if (Types.ObjectId.isValid(search)) {
+      orClauses.push({ _id: new Types.ObjectId(search) });
+    }
+    if (matchedUserIds.length > 0) {
+      orClauses.push({ user: { $in: matchedUserIds } });
+    }
+    orClauses.push({ "shippingAddress.name": { $regex: searchRegex } });
+
+    if (filter["$or"]) {
+      filter["$and"] = [{ $or: filter["$or"] }, { $or: orClauses }];
+      delete filter["$or"];
+    } else {
+      filter["$or"] = orClauses;
+    }
+  }
+
   const [total, orders] = await Promise.all([
     Order.countDocuments(filter),
     Order.find(filter)
@@ -78,11 +141,6 @@ export async function adminGetOrders(req: Request, res: Response): Promise<void>
   });
 }
 
-/**
- * PATCH /api/v1/admin/orders/:id/status
- * Transition an order status sequentially:
- * Placed -> Processing -> Dispatched -> OutForDelivery -> Delivered
- */
 export async function adminUpdateOrderStatus(req: Request, res: Response): Promise<void> {
   const adminId = req.user?.id;
   if (!adminId) {
