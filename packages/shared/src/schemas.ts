@@ -186,6 +186,20 @@ export const OrderItemSchema = z.object({
   unitPrice: z.number().nonnegative(),
   qty: z.number().int().positive(),
 });
+export type OrderItem = z.infer<typeof OrderItemSchema>;
+
+// ---- Shipping Address Snapshot ----
+export const ShippingAddressSnapshotSchema = z.object({
+  label: z.string().min(1),
+  name: z.string().min(1),
+  phone: z.string().min(1),
+  line1: z.string().min(1),
+  line2: z.string().optional(),
+  city: z.string().min(1),
+  state: z.string().min(1),
+  pincode: z.string().min(1),
+});
+export type ShippingAddressSnapshot = z.infer<typeof ShippingAddressSnapshotSchema>;
 
 // ---- Pricing ----
 export const PricingSchema = z.object({
@@ -195,22 +209,47 @@ export const PricingSchema = z.object({
   discount: z.number().nonnegative(),
   total: z.number().nonnegative(),
 });
+export type Pricing = z.infer<typeof PricingSchema>;
 
-// ---- Order ----
+// ---- Order Status & History ----
 export const OrderStatusSchema = z.enum(ORDER_STATUSES);
 
+export const OrderStatusHistoryItemSchema = z.object({
+  status: OrderStatusSchema,
+  at: z.coerce.date(),
+  by: z.string(),
+  note: z.string().optional(),
+});
+export type OrderStatusHistoryItem = z.infer<typeof OrderStatusHistoryItemSchema>;
+
+export const OrderPaymentMethodSchema = z.enum(["stripe", "cod"]);
+export type OrderPaymentMethod = z.infer<typeof OrderPaymentMethodSchema>;
+
+export const OrderPaymentStatusSchema = z.enum(["pending", "paid", "failed", "refunded"]);
+export type OrderPaymentStatus = z.infer<typeof OrderPaymentStatusSchema>;
+
+export const OrderPaymentSchema = z.object({
+  method: OrderPaymentMethodSchema,
+  status: OrderPaymentStatusSchema,
+  stripeSessionId: z.string().optional(),
+  paymentIntentId: z.string().optional(),
+});
+export type OrderPayment = z.infer<typeof OrderPaymentSchema>;
+
+// ---- Order ----
 export const OrderSchema = z.object({
+  id: z.string().optional(),
   user: z.string(),
   items: z.array(OrderItemSchema).min(1),
+  shippingAddress: ShippingAddressSnapshotSchema,
   pricing: PricingSchema,
-  payment: z.object({
-    method: z.enum(["stripe", "cod"]),
-    status: z.enum(["pending", "paid", "failed", "refunded"]),
-    stripeSessionId: z.string().optional(),
-    paymentIntentId: z.string().optional(),
-  }),
+  payment: OrderPaymentSchema,
   status: OrderStatusSchema,
+  statusHistory: z.array(OrderStatusHistoryItemSchema).default([]),
+  createdAt: z.coerce.date().optional(),
+  updatedAt: z.coerce.date().optional(),
 });
+export type Order = z.infer<typeof OrderSchema>;
 
 // ---- Review ----
 export const ReviewSchema = z.object({
