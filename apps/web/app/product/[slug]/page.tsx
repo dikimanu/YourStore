@@ -3,8 +3,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProductCard } from "@/components/ProductCard";
+import { AddToCartButton } from "@/components/AddToCartButton";
 import { fetchProductBySlug, fetchRelatedProducts } from "@/lib/serverApi";
 import { imageUrl, Product } from "@yourstore/shared";
+
+type ProductWithId = Product & { id: string };
 
 function formatAttribute(value: unknown): string {
   if (typeof value === "string") return value;
@@ -50,11 +53,11 @@ export default async function ProductDetailPage({
   const { slug } = await params;
 
   const [productRes, relatedRes] = await Promise.all([
-    fetchProductBySlug<Product>(slug, {
+    fetchProductBySlug<ProductWithId>(slug, {
       revalidate: 60,
       tags: [`product-${slug}`],
     }).catch(() => null),
-    fetchRelatedProducts<Product>(slug, {
+    fetchRelatedProducts<ProductWithId>(slug, {
       revalidate: 60,
     }).catch(() => null),
   ]);
@@ -64,7 +67,7 @@ export default async function ProductDetailPage({
   }
 
   const product = productRes.product;
-  const related = relatedRes?.products ?? [];
+  const related = (relatedRes?.products ?? []);
 
   const mainImage = product.images[0];
   const mainImgSrc = mainImage
@@ -214,20 +217,17 @@ export default async function ProductDetailPage({
             </div>
           )}
 
-          {/* Action Button Placeholder */}
+          {/* Action Button */}
           <div className="pt-4 border-t border-gray-200 dark:border-gray-800">
             {isEnquiry ? (
               <div className="w-full text-center py-3.5 px-6 rounded-xl font-semibold bg-amber-500 hover:bg-amber-600 text-white transition cursor-pointer">
                 Submit Enquiry
               </div>
             ) : (
-              <button
-                type="button"
-                disabled={!inStock}
-                className="w-full py-3.5 px-6 rounded-xl font-semibold bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {inStock ? "Add to Cart" : "Out of Stock"}
-              </button>
+              <AddToCartButton
+                productId={product.id ?? ""}
+                inStock={inStock}
+              />
             )}
           </div>
 
