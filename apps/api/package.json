@@ -10,7 +10,8 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc --project tsconfig.json",
     "start": "node dist/index.js",
-    "typecheck": "tsc --project tsconfig.json --noEmit"
+    "typecheck": "tsc --project tsconfig.json --noEmit",
+    "seed": "tsx src/seed/seed.ts"
   },
   "dependencies": {
     "@yourstore/shared": "*",
