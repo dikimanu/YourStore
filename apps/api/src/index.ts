@@ -10,6 +10,8 @@ import { csrfProtection } from "./middleware/csrf.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
 import healthRouter from "./routes/health.js";
 import authRouter from "./routes/auth.js";
+import productsRouter from "./routes/products.js";
+import adminRouter from "./routes/admin.js";
 import { logger } from "./lib/logger.js";
 
 const app = express();
@@ -43,6 +45,8 @@ app.use(csrfProtection);
 // Mount routes
 app.use(healthRouter);
 app.use("/api/v1/auth", authLimiter, authRouter);
+app.use("/api/v1/products", productsRouter);
+app.use("/api/v1/admin", adminRouter);
 
 // 404 and Error handling middlewares
 app.use(notFoundHandler);

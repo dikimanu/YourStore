@@ -42,6 +42,23 @@ export const GadgetsAttributesSchema = z.object({
   warranty: z.string().optional(),
 });
 
+// ---- Category attribute schemas map ----
+export const CategoryAttributesSchemas = {
+  electronics: ElectronicsAttributesSchema,
+  clothing: ClothingAttributesSchema,
+  vehicles: VehiclesAttributesSchema,
+  home: HomeAttributesSchema,
+  gadgets: GadgetsAttributesSchema,
+} as const;
+
+export type CategoryAttributes = {
+  electronics: z.infer<typeof ElectronicsAttributesSchema>;
+  clothing: z.infer<typeof ClothingAttributesSchema>;
+  vehicles: z.infer<typeof VehiclesAttributesSchema>;
+  home: z.infer<typeof HomeAttributesSchema>;
+  gadgets: z.infer<typeof GadgetsAttributesSchema>;
+};
+
 // ---- Variant ----
 export const VariantSchema = z.object({
   sku: z.string().min(1),
@@ -52,6 +69,7 @@ export const VariantSchema = z.object({
   priceOverride: z.number().nonnegative().optional(),
   stock: z.number().int().nonnegative(),
 });
+export type Variant = z.infer<typeof VariantSchema>;
 
 // ---- Product ----
 export const ProductSchema = z.object({
@@ -61,7 +79,8 @@ export const ProductSchema = z.object({
   category: z.enum(CATEGORIES),
   brand: z.string().min(1),
   basePrice: z.number().nonnegative(),
-  images: z.array(ImageSchema).max(6),
+  images: z.array(ImageSchema).max(6).default([]),
+  attributes: z.record(z.unknown()).default({}),
   variants: z.array(VariantSchema).default([]),
   stock: z.number().int().nonnegative().optional(),
   listingType: z.enum(LISTING_TYPES).default("purchasable"),
@@ -69,6 +88,89 @@ export const ProductSchema = z.object({
   ratingCount: z.number().int().nonnegative().default(0),
   isActive: z.boolean().default(true),
 });
+export type Product = z.infer<typeof ProductSchema>;
+
+export const CreateProductInputSchema = z
+  .object({
+    title: z.string().trim().min(1, "Title is required"),
+    slug: z.string().trim().min(1, "Slug is required").optional(),
+    description: z.string().trim().min(1, "Description is required"),
+    category: z.enum(CATEGORIES),
+    brand: z.string().trim().min(1, "Brand is required"),
+    basePrice: z.number().nonnegative("Base price must be >= 0"),
+    images: z.array(ImageSchema).max(6, "Maximum 6 images allowed").default([]),
+    attributes: z.record(z.unknown()).default({}),
+    variants: z.array(VariantSchema).default([]),
+    stock: z.number().int().nonnegative().optional(),
+    listingType: z.enum(LISTING_TYPES).default("purchasable"),
+    isActive: z.boolean().default(true),
+  })
+  .superRefine((data, ctx) => {
+    // Validate attributes with the corresponding category schema
+    const schema = CategoryAttributesSchemas[data.category];
+    if (schema) {
+      const res = schema.safeParse(data.attributes);
+      if (!res.success) {
+        for (const issue of res.error.issues) {
+          ctx.addIssue({
+            ...issue,
+            path: ["attributes", ...issue.path],
+          });
+        }
+      }
+    }
+  });
+export type CreateProductInput = z.infer<typeof CreateProductInputSchema>;
+
+export const UpdateProductInputSchema = z
+  .object({
+    title: z.string().trim().min(1).optional(),
+    slug: z.string().trim().min(1).optional(),
+    description: z.string().trim().min(1).optional(),
+    category: z.enum(CATEGORIES).optional(),
+    brand: z.string().trim().min(1).optional(),
+    basePrice: z.number().nonnegative().optional(),
+    images: z.array(ImageSchema).max(6).optional(),
+    attributes: z.record(z.unknown()).optional(),
+    variants: z.array(VariantSchema).optional(),
+    stock: z.number().int().nonnegative().optional(),
+    listingType: z.enum(LISTING_TYPES).optional(),
+    isActive: z.boolean().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.category && data.attributes) {
+      const schema = CategoryAttributesSchemas[data.category];
+      if (schema) {
+        const res = schema.safeParse(data.attributes);
+        if (!res.success) {
+          for (const issue of res.error.issues) {
+            ctx.addIssue({
+              ...issue,
+              path: ["attributes", ...issue.path],
+            });
+          }
+        }
+      }
+    }
+  });
+export type UpdateProductInput = z.infer<typeof UpdateProductInputSchema>;
+
+// Product query filters
+export const ProductQuerySchema = z.object({
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(20),
+  search: z.string().trim().optional(),
+  category: z.enum(CATEGORIES).optional(),
+  brand: z.string().trim().optional(),
+  minPrice: z.coerce.number().nonnegative().optional(),
+  maxPrice: z.coerce.number().nonnegative().optional(),
+  inStock: z.enum(["true", "false"]).optional(),
+  listingType: z.enum(LISTING_TYPES).optional(),
+  sort: z
+    .enum(["price_asc", "price_desc", "rating", "newest", "title_asc"])
+    .default("newest"),
+});
+export type ProductQuery = z.infer<typeof ProductQuerySchema>;
 
 // ---- Order item snapshot ----
 export const OrderItemSchema = z.object({
@@ -207,4 +309,33 @@ export const UserSchema = z.object({
   updatedAt: z.coerce.date().optional(),
 });
 export type User = z.infer<typeof UserSchema>;
+
+// ---- Upload Sign Schemas ----
+export const ALLOWED_UPLOAD_MIME_TYPES = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+  "image/avif",
+] as const;
+
+export const SignUploadInputSchema = z.object({
+  fileType: z.enum(ALLOWED_UPLOAD_MIME_TYPES, {
+    errorMap: () => ({
+      message: "Unsupported file type. Allowed: JPEG, PNG, WebP, AVIF",
+    }),
+  }),
+  fileSize: z
+    .number()
+    .int()
+    .positive("File size must be positive")
+    .max(10 * 1024 * 1024, "File size exceeds maximum limit of 10 MB"),
+  imageCount: z
+    .number()
+    .int()
+    .min(1, "At least 1 image is required")
+    .max(6, "Cannot upload more than 6 images per product"),
+});
+export type SignUploadInput = z.infer<typeof SignUploadInputSchema>;
+
 
