@@ -4,6 +4,7 @@ import {
   UpdateProductInputSchema,
   ProductQuerySchema,
   SignUploadInputSchema,
+  AdminOrderStatusUpdateSchema,
 } from "@yourstore/shared";
 import { authenticate, requireRole } from "../middleware/auth.js";
 import { validateBody, validateQuery } from "../middleware/validate.js";
@@ -15,6 +16,7 @@ import {
   adminDeleteProduct,
 } from "../controllers/product.js";
 import { signUpload } from "../controllers/upload.js";
+import { adminGetOrders, adminUpdateOrderStatus } from "../controllers/adminOrders.js";
 import { asyncHandler } from "../lib/asyncHandler.js";
 
 const router = Router();
@@ -35,6 +37,14 @@ router.get("/products/:id", asyncHandler(adminGetProduct));
 router.post("/products", validateBody(CreateProductInputSchema), asyncHandler(adminCreateProduct));
 router.put("/products/:id", validateBody(UpdateProductInputSchema), asyncHandler(adminUpdateProduct));
 router.delete("/products/:id", asyncHandler(adminDeleteProduct));
+
+// Order management
+router.get("/orders", asyncHandler(adminGetOrders));
+router.patch(
+  "/orders/:id/status",
+  validateBody(AdminOrderStatusUpdateSchema),
+  asyncHandler(adminUpdateOrderStatus),
+);
 
 export default router;
 

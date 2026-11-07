@@ -433,6 +433,17 @@ export const CheckoutStripeInputSchema = z.object({
 });
 export type CheckoutStripeInput = z.infer<typeof CheckoutStripeInputSchema>;
 
+export const CheckoutCodInputSchema = z.object({
+  addressId: z.string().trim().min(1, "Address ID is required"),
+  couponCode: z.string().trim().min(1).optional(),
+});
+export type CheckoutCodInput = z.infer<typeof CheckoutCodInputSchema>;
+
+export const AdminOrderStatusUpdateSchema = z.object({
+  status: z.enum(["Processing", "Dispatched", "OutForDelivery", "Delivered"]),
+});
+export type AdminOrderStatusUpdate = z.infer<typeof AdminOrderStatusUpdateSchema>;
+
 export const EmailSchema = z
   .string()
   .trim()

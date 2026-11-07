@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { Types } from "mongoose";
 import Stripe from "stripe";
-import { CheckoutStripeInput } from "@yourstore/shared";
+import { CheckoutStripeInput, CheckoutCodInput } from "@yourstore/shared";
 import { env } from "../env.js";
 import { Order } from "../models/Order.js";
 import { User } from "../models/User.js";
@@ -22,6 +22,25 @@ import { logger } from "../lib/logger.js";
  
 // Stripe minimum charge in INR is ~₹50 (5000 paise)
 const MIN_STRIPE_AMOUNT_INR = 50;
+
+/**
+ * POST /api/v1/checkout/cod
+ * Authenticated, CSRF-protected endpoint for Cash on Delivery checkout.
+ */
+export async function createCodCheckout(req: Request, res: Response): Promise<void> {
+  const userId = req.user?.id;
+  if (!userId) {
+    throw new UnauthorizedError("Authentication required");
+  }
+
+  const { addressId, couponCode } = req.body as CheckoutCodInput;
+
+  const order = await createOrderFromCart(userId, addressId, couponCode, "cod");
+
+  res.status(201).json({
+    orderId: order._id.toString(),
+  });
+}
 
 /**
  * POST /api/v1/checkout/stripe
