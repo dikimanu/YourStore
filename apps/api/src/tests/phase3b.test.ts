@@ -12,7 +12,7 @@ import { User, IUser, IAddress } from "../models/User.js";
 import { Product } from "../models/Product.js";
 import { Coupon } from "../models/Coupon.js";
 import { Order, type IOrder } from "../models/Order.js";
-import { createOrderFromCart, restoreStock } from "../services/order.js";
+import { createOrderFromCart, restoreStock, releaseCoupon } from "../services/order.js";
 
 process.env["JWT_ACCESS_SECRET"] = "test_jwt_access_secret_32chars_long!";
 process.env["JWT_REFRESH_SECRET"] = "test_jwt_refresh_secret_32chars_long";
@@ -352,5 +352,98 @@ describe("Phase 3 Part B: Order Service, Atomic Stock & Coupons (Real In-Memory 
 
     const prod2 = await Product.findById(product2._id);
     expect(prod2?.variants[0]?.stock).toBe(4); // 3 + 1
+  });
+
+  it("7. Two concurrent createOrderFromCart calls on the same cart create exactly one order", async () => {
+    const { user, addressId } = await createTestUser();
+
+    const product = await Product.create({
+      title: "Wireless Mechanical Keyboard",
+      slug: "wireless-mech-keyboard",
+      description: "Bluetooth 5.1 & USB-C",
+      category: "gadgets",
+      brand: "NuPhy",
+      basePrice: 9000,
+      stock: 10,
+      listingType: "purchasable",
+      isActive: true,
+      variants: [],
+      images: [],
+    });
+
+    user.cart = [{ productId: product._id, qty: 1 }];
+    await user.save();
+
+    // Two concurrent checkouts triggered on the exact same user cart
+    const results = await Promise.allSettled([
+      createOrderFromCart(user._id.toString(), addressId, undefined, "cod"),
+      createOrderFromCart(user._id.toString(), addressId, undefined, "cod"),
+    ]);
+
+    const successful = results.filter((r) => r.status === "fulfilled");
+    const failed = results.filter((r) => r.status === "rejected");
+
+    expect(successful).toHaveLength(1);
+    expect(failed).toHaveLength(1);
+
+    // Exactly one order is created
+    const orderCount = await Order.countDocuments({ user: user._id });
+    expect(orderCount).toBe(1);
+
+    // Cart is now empty for COD
+    const userAfter = await User.findById(user._id);
+    expect(userAfter?.cart).toHaveLength(0);
+  });
+
+  it("8. releaseCoupon restores the usage count once", async () => {
+    const coupon = await Coupon.create({
+      code: "SAVE500",
+      type: "fixed",
+      value: 500,
+      minOrder: 1000,
+      expiresAt: new Date(Date.now() + 86400000),
+      usageLimit: 5,
+      usedCount: 2,
+      isActive: true,
+    });
+
+    const fakeOrder = {
+      couponCode: "SAVE500",
+    } as unknown as IOrder;
+
+    await releaseCoupon(fakeOrder);
+
+    const couponAfter = await Coupon.findById(coupon._id);
+    expect(couponAfter?.usedCount).toBe(1); // 2 - 1
+  });
+
+  it("9. A failed order leaves the cart intact", async () => {
+    const { user, addressId } = await createTestUser();
+
+    const outOfStockProduct = await Product.create({
+      title: "Retro Cassette Player",
+      slug: "retro-cassette-player",
+      description: "Vintage tape player",
+      category: "gadgets",
+      brand: "Sony",
+      basePrice: 4000,
+      stock: 0, // Out of stock
+      listingType: "purchasable",
+      isActive: true,
+      variants: [],
+      images: [],
+    });
+
+    user.cart = [{ productId: outOfStockProduct._id, qty: 1 }];
+    await user.save();
+
+    await expect(
+      createOrderFromCart(user._id.toString(), addressId, undefined, "cod"),
+    ).rejects.toThrow(/Insufficient stock/);
+
+    // User cart must remain intact after failure
+    const userAfter = await User.findById(user._id);
+    expect(userAfter?.cart).toHaveLength(1);
+    expect(userAfter?.cart[0]?.productId.toString()).toBe(outOfStockProduct._id.toString());
   });
 });

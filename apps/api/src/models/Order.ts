@@ -56,6 +56,7 @@ export interface IOrder extends Document {
   payment: IOrderPayment;
   status: OrderStatus;
   statusHistory: IOrderStatusHistory[];
+  couponCode?: string | undefined;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -140,6 +141,7 @@ const OrderSchema = new Schema<IOrder>(
       default: "PendingPayment",
     },
     statusHistory: { type: [OrderStatusHistorySchema], default: [] },
+    couponCode: { type: String, uppercase: true, trim: true },
   },
   {
     timestamps: true,
@@ -162,7 +164,9 @@ const OrderSchema = new Schema<IOrder>(
   },
 );
 
-OrderSchema.index({ createdAt: -1 });
+OrderSchema.index({ user: 1, createdAt: -1 });
+OrderSchema.index({ "payment.stripeSessionId": 1 }, { sparse: true });
+OrderSchema.index({ status: 1 });
 
 export const Order: Model<IOrder> =
   mongoose.models["Order"] || mongoose.model<IOrder>("Order", OrderSchema);
