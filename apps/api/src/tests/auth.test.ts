@@ -31,10 +31,26 @@ describe("Phase 1 Part B: Authentication & Security", () => {
 
     // Mock User.findOne
     vi.spyOn(User, "findOne").mockImplementation((filter: unknown) => {
-      const email = (filter as { email?: string })?.email;
-      const found = email
-        ? Array.from(memoryUsers.values()).find((u) => u.email === email)
-        : null;
+      const f = filter as {
+        email?: string;
+        emailVerificationTokenHash?: string;
+        resetPasswordTokenHash?: string;
+      } | null;
+
+      let found: IUser | null = null;
+      if (f?.email) {
+        found = Array.from(memoryUsers.values()).find((u) => u.email === f.email) ?? null;
+      } else if (f?.emailVerificationTokenHash) {
+        found =
+          Array.from(memoryUsers.values()).find(
+            (u) => u.emailVerificationTokenHash === f.emailVerificationTokenHash,
+          ) ?? null;
+      } else if (f?.resetPasswordTokenHash) {
+        found =
+          Array.from(memoryUsers.values()).find(
+            (u) => u.resetPasswordTokenHash === f.resetPasswordTokenHash,
+          ) ?? null;
+      }
 
       return {
         select: vi.fn().mockImplementation(() => Promise.resolve(found ?? null)),
@@ -458,6 +474,180 @@ describe("Phase 1 Part B: Authentication & Security", () => {
       expect(res.status).toBe(401);
       const body = res.body as { error: { code: string } };
       expect(body.error.code).toBe("UNAUTHORIZED");
+    });
+  });
+
+  describe("Email Verification", () => {
+    it("verifies user email with a valid single-use token", async () => {
+      const user = new User({
+        name: "Unverified User",
+        email: "unverified@example.com",
+        passwordHash: "hash",
+        emailVerified: false,
+        emailVerificationTokenHash: hashToken("valid-verify-token-123"),
+        emailVerificationExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      });
+      await user.save();
+
+      const res = await request(app)
+        .post("/api/v1/auth/verify-email")
+        .set("X-Requested-With", "XMLHttpRequest")
+        .send({ token: "valid-verify-token-123" });
+
+      expect(res.status).toBe(200);
+      const body = res.body as { success: boolean; message: string };
+      expect(body.success).toBe(true);
+
+      // Verify user in db is updated and token is invalidated (single-use)
+      const updatedUser = memoryUsers.get(user._id.toString());
+      expect(updatedUser?.emailVerified).toBe(true);
+      expect(updatedUser?.emailVerificationTokenHash).toBeNull();
+
+      // Second use of the same token must fail
+      const reuseRes = await request(app)
+        .post("/api/v1/auth/verify-email")
+        .set("X-Requested-With", "XMLHttpRequest")
+        .send({ token: "valid-verify-token-123" });
+
+      expect(reuseRes.status).toBe(400);
+      const errorBody = reuseRes.body as { error: { code: string } };
+      expect(errorBody.error.code).toBe("BAD_REQUEST");
+    });
+
+    it("rejects expired verification tokens", async () => {
+      const user = new User({
+        name: "Expired Token User",
+        email: "expired@example.com",
+        passwordHash: "hash",
+        emailVerified: false,
+        emailVerificationTokenHash: hashToken("expired-token"),
+        emailVerificationExpiresAt: new Date(Date.now() - 10000), // expired 10s ago
+      });
+      await user.save();
+
+      const res = await request(app)
+        .post("/api/v1/auth/verify-email")
+        .set("X-Requested-With", "XMLHttpRequest")
+        .send({ token: "expired-token" });
+
+      expect(res.status).toBe(400);
+      const body = res.body as { error: { code: string; message: string } };
+      expect(body.error.code).toBe("BAD_REQUEST");
+      expect(body.error.message).toContain("expired");
+    });
+  });
+
+  describe("Forgot and Reset Password Flow", () => {
+    it("returns identical generic success on forgot-password whether email exists or not", async () => {
+      const user = new User({
+        name: "Existing User",
+        email: "existing@example.com",
+        passwordHash: "hash",
+      });
+      await user.save();
+
+      // 1. Existing email
+      const resExists = await request(app)
+        .post("/api/v1/auth/forgot-password")
+        .set("X-Requested-With", "XMLHttpRequest")
+        .send({ email: "existing@example.com" });
+
+      expect(resExists.status).toBe(200);
+      const bodyExists = resExists.body as { success: boolean; message: string };
+      expect(bodyExists.success).toBe(true);
+      expect(bodyExists.message).toContain("If an account exists");
+
+      // Verify reset token hash was generated and stored on the user
+      const updatedUser = memoryUsers.get(user._id.toString());
+      expect(updatedUser?.resetPasswordTokenHash).toBeDefined();
+      expect(updatedUser?.resetPasswordExpiresAt).toBeInstanceOf(Date);
+
+      // 2. Non-existent email
+      const resNonExists = await request(app)
+        .post("/api/v1/auth/forgot-password")
+        .set("X-Requested-With", "XMLHttpRequest")
+        .send({ email: "ghost@example.com" });
+
+      expect(resNonExists.status).toBe(200);
+      const bodyNonExists = resNonExists.body as { success: boolean; message: string };
+      expect(bodyNonExists.success).toBe(true);
+      // Messages are identical to prevent email enumeration
+      expect(bodyNonExists.message).toBe(bodyExists.message);
+    });
+
+    it("resets password with valid token and enforces single-use token invalidation", async () => {
+      const rawResetToken = "secret-reset-token-xyz-123";
+      const oldPasswordHash = await hashPassword("OldPassword123!");
+
+      const user = new User({
+        name: "Reset User",
+        email: "reset@example.com",
+        passwordHash: oldPasswordHash,
+        resetPasswordTokenHash: hashToken(rawResetToken),
+        resetPasswordExpiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hr
+        refreshTokenHash: "active-session-token-hash",
+      });
+      await user.save();
+
+      // 1. Valid reset request
+      const res = await request(app)
+        .post("/api/v1/auth/reset-password")
+        .set("X-Requested-With", "XMLHttpRequest")
+        .send({
+          token: rawResetToken,
+          password: "BrandNewPassword123!",
+        });
+
+      expect(res.status).toBe(200);
+      const body = res.body as { success: boolean; message: string };
+      expect(body.success).toBe(true);
+
+      // Verify user has updated password and reset token is cleared (single-use)
+      const updatedUser = memoryUsers.get(user._id.toString());
+      expect(updatedUser?.resetPasswordTokenHash).toBeNull();
+      expect(updatedUser?.resetPasswordExpiresAt).toBeNull();
+      expect(updatedUser?.passwordHash).not.toBe(oldPasswordHash);
+      // All existing refresh sessions invalidated
+      expect(updatedUser?.refreshTokenHash).toBeNull();
+
+      // 2. Single-use test: reusing the exact same reset token must fail
+      const reuseRes = await request(app)
+        .post("/api/v1/auth/reset-password")
+        .set("X-Requested-With", "XMLHttpRequest")
+        .send({
+          token: rawResetToken,
+          password: "AnotherPassword123!",
+        });
+
+      expect(reuseRes.status).toBe(400);
+      const reuseBody = reuseRes.body as { error: { code: string; message: string } };
+      expect(reuseBody.error.code).toBe("BAD_REQUEST");
+      expect(reuseBody.error.message).toContain("Invalid or expired");
+    });
+
+    it("rejects expired reset tokens", async () => {
+      const expiredResetToken = "expired-token-456";
+      const user = new User({
+        name: "Expired Reset User",
+        email: "expiredreset@example.com",
+        passwordHash: "hash",
+        resetPasswordTokenHash: hashToken(expiredResetToken),
+        resetPasswordExpiresAt: new Date(Date.now() - 5000), // expired 5 seconds ago
+      });
+      await user.save();
+
+      const res = await request(app)
+        .post("/api/v1/auth/reset-password")
+        .set("X-Requested-With", "XMLHttpRequest")
+        .send({
+          token: expiredResetToken,
+          password: "NewPassword123!",
+        });
+
+      expect(res.status).toBe(400);
+      const body = res.body as { error: { code: string; message: string } };
+      expect(body.error.code).toBe("BAD_REQUEST");
+      expect(body.error.message).toContain("expired");
     });
   });
 });

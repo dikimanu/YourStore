@@ -19,6 +19,15 @@ This document describes the security controls, policies, and threat mitigations 
   - Every call to `/api/v1/auth/refresh` rotates both the access token and the refresh token (`apps/api/src/controllers/auth.ts`).
   - If a refresh token is presented whose hash does not match the stored hash (e.g. replaying an already-used token), **token reuse detection** triggers: all active refresh sessions for the user are immediately revoked, cookies are cleared, and a security audit log event is recorded.
 
+- **Email Verification & Password Reset:**
+  - Single-use, expiring tokens generated with cryptographic randomness (`crypto.randomBytes(32)`).
+  - Tokens are stored in the database strictly as **SHA-256 hashes** (`emailVerificationTokenHash`, `resetPasswordTokenHash`) alongside expiration timestamps.
+  - Verification tokens expire in 24 hours; reset tokens expire in 1 hour.
+  - Single-use guarantee: tokens are immediately set to `null` upon successful use, preventing replay attacks.
+  - All existing refresh sessions (`refreshTokenHash`) are revoked when a password reset completes.
+  - Timing attack & enumeration defense: `POST /api/v1/auth/forgot-password` returns an identical generic response regardless of whether an account exists.
+  - Transactional emails are handled via Resend (`apps/api/src/lib/email.ts`).
+
 - **Account Lockout & Timing Attack Mitigation:**
   - After 5 consecutive failed login attempts, the account is locked for 15 minutes (`apps/api/src/controllers/auth.ts`).
   - Identical error messages (`"Invalid email or password"`) and HTTP status codes (`401 Unauthorized`) are returned for non-existent emails and incorrect passwords, preventing account enumeration.

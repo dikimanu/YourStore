@@ -1,5 +1,12 @@
 import { Request, Response } from "express";
-import { RegisterInput, LoginInput } from "@yourstore/shared";
+import crypto from "node:crypto";
+import {
+  RegisterInput,
+  LoginInput,
+  ForgotPasswordInput,
+  ResetPasswordInput,
+  VerifyEmailInput,
+} from "@yourstore/shared";
 import { User } from "../models/User.js";
 import { hashPassword, verifyPassword } from "../lib/password.js";
 import {
@@ -16,12 +23,16 @@ import {
   ConflictError,
   UnauthorizedError,
   NotFoundError,
+  BadRequestError,
   AppError,
 } from "../lib/errors.js";
 import { createAuditLog } from "../lib/auditLog.js";
+import { sendVerificationEmail, sendPasswordResetEmail } from "../lib/email.js";
 
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+const EMAIL_VERIFICATION_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
+const PASSWORD_RESET_EXPIRY_MS = 60 * 60 * 1000; // 1 hour
 
 function getRefreshCookie(req: Request): string | undefined {
   const cookies = req.cookies as Record<string, unknown> | undefined;
@@ -46,12 +57,18 @@ export async function register(req: Request, res: Response): Promise<void> {
   }
 
   const passwordHash = await hashPassword(password);
+  const verificationToken = crypto.randomBytes(32).toString("hex");
+  const emailVerificationTokenHash = hashToken(verificationToken);
+  const emailVerificationExpiresAt = new Date(Date.now() + EMAIL_VERIFICATION_EXPIRY_MS);
+
   const user = new User({
     name,
     email,
     passwordHash,
     role: "user",
     emailVerified: false,
+    emailVerificationTokenHash,
+    emailVerificationExpiresAt,
   });
 
   const accessToken = generateAccessToken({
@@ -63,6 +80,9 @@ export async function register(req: Request, res: Response): Promise<void> {
 
   user.refreshTokenHash = hashToken(refreshToken);
   await user.save();
+
+  // Send verification email via Resend asynchronously without blocking response
+  void sendVerificationEmail(user.email, verificationToken);
 
   res.cookie("accessToken", accessToken, getAccessTokenCookieOptions());
   res.cookie("refreshToken", refreshToken, getRefreshTokenCookieOptions());
@@ -223,4 +243,91 @@ export async function getMe(req: Request, res: Response): Promise<void> {
   }
 
   res.status(200).json({ user: user.toJSON() });
+}
+
+export async function verifyEmail(req: Request, res: Response): Promise<void> {
+  const { token } = req.body as VerifyEmailInput;
+
+  const tokenHash = hashToken(token);
+  const user = await User.findOne({
+    emailVerificationTokenHash: tokenHash,
+  }).select("+emailVerificationTokenHash +emailVerificationExpiresAt");
+
+  if (!user || !user.emailVerificationExpiresAt || user.emailVerificationExpiresAt < new Date()) {
+    throw new BadRequestError("Invalid or expired verification token");
+  }
+
+  // Single-use: mark verified and invalidate token
+  user.emailVerified = true;
+  user.emailVerificationTokenHash = null;
+  user.emailVerificationExpiresAt = null;
+  await user.save();
+
+  await createAuditLog({
+    actor: user._id.toString(),
+    action: "EMAIL_VERIFIED",
+    targetType: "User",
+    targetId: user._id.toString(),
+  });
+
+  res.status(200).json({ success: true, message: "Email verified successfully" });
+}
+
+export async function forgotPassword(req: Request, res: Response): Promise<void> {
+  const { email } = req.body as ForgotPasswordInput;
+
+  // Generic success response to avoid revealing whether an email exists
+  const successResponse = {
+    success: true,
+    message: "If an account exists with this email, a password reset link has been sent.",
+  };
+
+  const user = await User.findOne({ email }).select("+resetPasswordTokenHash +resetPasswordExpiresAt");
+  if (!user) {
+    res.status(200).json(successResponse);
+    return;
+  }
+
+  const resetToken = crypto.randomBytes(32).toString("hex");
+  user.resetPasswordTokenHash = hashToken(resetToken);
+  user.resetPasswordExpiresAt = new Date(Date.now() + PASSWORD_RESET_EXPIRY_MS);
+  await user.save();
+
+  void sendPasswordResetEmail(user.email, resetToken);
+
+  res.status(200).json(successResponse);
+}
+
+export async function resetPassword(req: Request, res: Response): Promise<void> {
+  const { token, password } = req.body as ResetPasswordInput;
+
+  const tokenHash = hashToken(token);
+  const user = await User.findOne({
+    resetPasswordTokenHash: tokenHash,
+  }).select("+resetPasswordTokenHash +resetPasswordExpiresAt +passwordHash +refreshTokenHash");
+
+  if (!user || !user.resetPasswordExpiresAt || user.resetPasswordExpiresAt < new Date()) {
+    throw new BadRequestError("Invalid or expired password reset token");
+  }
+
+  // Single-use: update password, invalidate reset token and all active refresh sessions
+  user.passwordHash = await hashPassword(password);
+  user.resetPasswordTokenHash = null;
+  user.resetPasswordExpiresAt = null;
+  user.refreshTokenHash = null; // Invalidate existing sessions
+  user.failedLoginCount = 0;
+  user.lockUntil = null;
+  await user.save();
+
+  await createAuditLog({
+    actor: user._id.toString(),
+    action: "PASSWORD_RESET_COMPLETED",
+    targetType: "User",
+    targetId: user._id.toString(),
+  });
+
+  res.clearCookie("accessToken", getClearCookieOptions());
+  res.clearCookie("refreshToken", getClearCookieOptions());
+
+  res.status(200).json({ success: true, message: "Password reset successful. Please log in with your new password." });
 }
