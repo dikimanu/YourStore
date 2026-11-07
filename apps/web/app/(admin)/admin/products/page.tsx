@@ -121,8 +121,22 @@ export default function AdminProductsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Search and Filters */}
+      {/* Actions and Search */}
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div className="flex items-center gap-3">
+          <Link
+            href="/admin/products/import"
+            className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition"
+          >
+            Import CSV
+          </Link>
+          <Link
+            href="/admin/products/new"
+            className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition"
+          >
+            + New Product
+          </Link>
+        </div>
         <div className="w-full sm:w-96">
           <label htmlFor="product-search" className="sr-only">
             Search products

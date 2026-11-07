@@ -864,3 +864,48 @@ export type AdminOrdersResponse = {
   page: number;
   totalPages: number;
 };
+
+// ---- CSV Product Import ----
+
+/** Request body for both /preview and /commit */
+export const CsvImportRequestSchema = z.object({
+  /** Raw CSV text, max 1 MB enforced at controller level */
+  csv: z.string().min(1, "CSV content is required"),
+});
+export type CsvImportRequest = z.infer<typeof CsvImportRequestSchema>;
+
+/** Per-row result returned by the preview endpoint */
+export const CsvImportRowResultSchema = z.object({
+  line: z.number().int().positive(),
+  valid: z.boolean(),
+  errors: z.array(z.string()),
+  data: z
+    .object({
+      title: z.string(),
+      slug: z.string(),
+      description: z.string(),
+      category: z.enum(CATEGORIES),
+      brand: z.string(),
+      basePrice: z.number(),
+      stock: z.number().int().nonnegative().optional(),
+      listingType: z.enum(LISTING_TYPES),
+      isActive: z.boolean(),
+    })
+    .optional(),
+});
+export type CsvImportRowResult = z.infer<typeof CsvImportRowResultSchema>;
+
+/** Response from the preview endpoint */
+export const CsvImportPreviewResponseSchema = z.object({
+  rows: z.array(CsvImportRowResultSchema),
+  validCount: z.number().int().nonnegative(),
+  invalidCount: z.number().int().nonnegative(),
+});
+export type CsvImportPreviewResponse = z.infer<typeof CsvImportPreviewResponseSchema>;
+
+/** Response from the commit endpoint on success */
+export const CsvImportCommitResponseSchema = z.object({
+  imported: z.number().int().nonnegative(),
+  message: z.string(),
+});
+export type CsvImportCommitResponse = z.infer<typeof CsvImportCommitResponseSchema>;

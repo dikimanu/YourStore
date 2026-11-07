@@ -143,6 +143,12 @@ export default function AdminLayout({ children }: AdminRoleGuardProps) {
             Audit Logs
           </Link>
           <Link
+href="/admin/products/import"
+            className="px-3 py-1.5 rounded-md bg-green-600 text-white hover:bg-green-700 transition font-medium"
+          >
+            Import CSV
+          </Link>
+          <Link
             href="/admin/products/new"
             className="px-3 py-1.5 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition font-medium"
           >

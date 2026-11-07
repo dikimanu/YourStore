@@ -13,6 +13,7 @@ import {
   AdminCustomersQuerySchema,
   AdminEnquiriesQuerySchema,
   AdminAuditLogsQuerySchema,
+  CsvImportRequestSchema,
 } from "@yourstore/shared";
 import { authenticate, requireRole } from "../middleware/auth.js";
 import { validateBody, validateQuery } from "../middleware/validate.js";
@@ -45,6 +46,10 @@ import {
   adminGetEnquiries,
   adminGetAuditLogs,
 } from "../controllers/adminLists.js";
+import {
+  adminImportPreview,
+  adminImportCommit,
+} from "../controllers/adminProductImport.js";
 
 const router = Router();
 
@@ -60,6 +65,10 @@ router.post(
   validateBody(SignUploadInputSchema),
   signUpload,
 );
+
+// CSV product import
+router.post("/products/import/preview", validateBody(CsvImportRequestSchema), asyncHandler(adminImportPreview));
+router.post("/products/import/commit", validateBody(CsvImportRequestSchema), asyncHandler(adminImportCommit));
 
 // Product management
 router.get("/products", validateQuery(ProductQuerySchema), asyncHandler(adminListProducts));
