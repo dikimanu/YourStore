@@ -12,6 +12,7 @@ import {
   restoreStock,
   releaseCoupon,
 } from "../services/order.js";
+import { sendOrderStatusEmail } from "../lib/email.js";
 import {
   BadRequestError,
   ConflictError,
@@ -36,6 +37,9 @@ export async function createCodCheckout(req: Request, res: Response): Promise<vo
   const { addressId, couponCode } = req.body as CheckoutCodInput;
 
   const order = await createOrderFromCart(userId, addressId, couponCode, "cod");
+
+  // Send order placed confirmation email asynchronously without blocking or failing checkout
+  void sendOrderStatusEmail(order, "placed").catch(() => {});
 
   res.status(201).json({
     orderId: order._id.toString(),
@@ -371,6 +375,7 @@ export async function handleStripeWebhook(req: Request, res: Response): Promise<
           // Clear user's cart now that order is paid and placed
           await User.updateOne({ _id: updatedOrder.user }, { $set: { cart: [] } });
           logger.info({ orderId, eventId: event.id }, "Order placed and user cart cleared");
+          void sendOrderStatusEmail(updatedOrder, "placed").catch(() => {});
         } else {
           logger.error(
             {

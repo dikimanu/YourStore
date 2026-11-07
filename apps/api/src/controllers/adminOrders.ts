@@ -6,6 +6,7 @@ import { User } from "../models/User.js";
 import { createAuditLog } from "../lib/auditLog.js";
 import { restoreStock } from "../services/order.js";
 import { getStripeClient } from "../lib/stripe.js";
+import { sendOrderStatusEmail } from "../lib/email.js";
 import {
   BadRequestError,
   ConflictError,
@@ -151,6 +152,12 @@ export async function adminUpdateOrderStatus(req: Request, res: Response): Promi
       paymentStatusUpdated: targetStatus === "Delivered" && order.payment.method === "cod",
     },
   });
+
+  if (targetStatus === "Dispatched") {
+    void sendOrderStatusEmail(updatedOrder, "dispatched").catch(() => {});
+  } else if (targetStatus === "Delivered") {
+    void sendOrderStatusEmail(updatedOrder, "delivered").catch(() => {});
+  }
 
   res.status(200).json({ order: updatedOrder });
 }
@@ -378,6 +385,8 @@ export async function adminRefundOrder(req: Request, res: Response): Promise<voi
       amount: order.pricing.total,
     },
   });
+
+  void sendOrderStatusEmail(updatedOrder, "refunded").catch(() => {});
 
   res.status(200).json({
     message: "Refund processed successfully",

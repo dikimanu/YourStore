@@ -191,6 +191,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
   const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
   const isWithinSevenDays = Date.now() - deliveredAt <= sevenDaysMs;
   const isReturnEligible = order.status === "Delivered" && isWithinSevenDays && !order.returnRequest;
+  const isInvoiceEligible = order.status !== "PendingPayment" && order.status !== "Cancelled";
 
   return (
     <div className="max-w-3xl mx-auto space-y-8">
@@ -224,6 +225,16 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
             >
               {order.status}
             </span>
+            {isInvoiceEligible && (
+              <a
+                href={`/api/v1/orders/${oid}/invoice`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm px-4 py-1.5 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/60 transition inline-flex items-center gap-1.5 shadow-sm"
+              >
+                <span>Download Invoice</span>
+              </a>
+            )}
             {isCancellable && (
               <button
                 type="button"

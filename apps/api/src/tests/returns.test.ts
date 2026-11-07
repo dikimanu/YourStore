@@ -48,7 +48,7 @@ interface ErrorBody {
 
 interface OrderBody {
   status: string;
-  returnRequest?: { reason: string; note?: string };
+  returnRequest?: { reason: string; note?: string; decision?: string };
   payment: { status: string };
   statusHistory: Array<{ status: string }>;
 }
@@ -337,7 +337,7 @@ describe("Returns & Refunds API", () => {
 
       expect(res.status).toBe(200);
       expect((res.body as OrdersResponse).orders.length).toBe(1);
-      expect((res.body as OrdersResponse).orders[0].status).toBe("ReturnRequested");
+      expect((res.body as OrdersResponse).orders[0]?.status).toBe("ReturnRequested");
     });
   });
 
@@ -380,8 +380,8 @@ describe("Returns & Refunds API", () => {
 
       expect(res.status).toBe(200);
       expect((res.body as OrderResponse).order.status).toBe("Delivered");
-      expect((res.body as OrderResponse).order.returnRequest.decision).toBe("reject");
-      expect((res.body as OrderResponse).order.returnRequest.note).toBe("Item appears used. Policy violation.");
+      expect((res.body as OrderResponse).order.returnRequest?.decision).toBe("reject");
+      expect((res.body as OrderResponse).order.returnRequest?.note).toBe("Item appears used. Policy violation.");
       expect((res.body as OrderResponse).order.statusHistory.at(-1)?.status).toBe("Delivered");
 
       // AuditLog
@@ -417,7 +417,7 @@ describe("Returns & Refunds API", () => {
 
       expect(res.status).toBe(200);
       expect((res.body as OrderResponse).order.status).toBe("Returned");
-      expect((res.body as OrderResponse).order.returnRequest.decision).toBe("approve");
+      expect((res.body as OrderResponse).order.returnRequest?.decision).toBe("approve");
       expect((res.body as OrderResponse).order.statusHistory.at(-1)?.status).toBe("Returned");
 
       // Stock should be restored (order qty was 1)

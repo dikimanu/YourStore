@@ -2,7 +2,7 @@ import { Router } from "express";
 import { RequestReturnInputSchema } from "@yourstore/shared";
 import { authenticate } from "../middleware/auth.js";
 import { validateBody } from "../middleware/validate.js";
-import { getMyOrders, getOrderById, cancelOrder, requestOrderReturn } from "../controllers/orders.js";
+import { getMyOrders, getOrderById, cancelOrder, requestOrderReturn, getOrderInvoice } from "../controllers/orders.js";
 import { asyncHandler } from "../lib/asyncHandler.js";
 
 const router = Router();
@@ -12,6 +12,9 @@ router.use(authenticate);
 
 // GET /api/v1/orders
 router.get("/", asyncHandler(getMyOrders));
+
+// GET /api/v1/orders/:id/invoice
+router.get("/:id/invoice", asyncHandler(getOrderInvoice));
 
 // GET /api/v1/orders/:id
 router.get("/:id", asyncHandler(getOrderById));

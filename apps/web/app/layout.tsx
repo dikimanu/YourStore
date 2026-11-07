@@ -13,6 +13,7 @@ export const metadata: Metadata = {
     template: "%s | YourStore",
   },
   description: "Multi-category e-commerce platform",
+  themeColor: "#2563eb",
 };
 
 export default function RootLayout({
