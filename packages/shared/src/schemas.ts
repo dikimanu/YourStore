@@ -222,9 +222,12 @@ export const ReviewSchema = z.object({
 });
 
 // ---- Coupon ----
+export const CouponTypeSchema = z.enum(["percent", "fixed"]);
+export type CouponType = z.infer<typeof CouponTypeSchema>;
+
 export const CouponSchema = z.object({
   code: z.string().min(1).toUpperCase(),
-  type: z.enum(["percent", "fixed"]),
+  type: CouponTypeSchema,
   value: z.number().positive(),
   minOrder: z.number().nonnegative().default(0),
   expiresAt: z.coerce.date(),
@@ -232,21 +235,142 @@ export const CouponSchema = z.object({
   usedCount: z.number().int().nonnegative().default(0),
   isActive: z.boolean().default(true),
 });
+export type Coupon = z.infer<typeof CouponSchema>;
+
+export const ValidateCouponInputSchema = z.object({
+  code: z.string().trim().min(1, "Coupon code is required").toUpperCase(),
+  subtotal: z.number().nonnegative("Subtotal must be non-negative"),
+});
+export type ValidateCouponInput = z.infer<typeof ValidateCouponInputSchema>;
+
+export const ValidateCouponResponseSchema = z.object({
+  valid: z.literal(true),
+  code: z.string(),
+  type: CouponTypeSchema,
+  value: z.number(),
+  minOrder: z.number(),
+  discount: z.number().nonnegative(),
+  newSubtotal: z.number().nonnegative(),
+});
+export type ValidateCouponResponse = z.infer<typeof ValidateCouponResponseSchema>;
 
 // ---- User ----
 export const UserRoleSchema = z.enum(USER_ROLES);
 
+export const IndianPhoneSchema = z
+  .string()
+  .trim()
+  .regex(
+    /^(?:(?:\+91[\s-]?)?|0)?[6-9]\d{9}$/,
+    "Invalid Indian phone number. Must be a valid 10-digit mobile number.",
+  );
+
+export const IndianPincodeSchema = z
+  .string()
+  .trim()
+  .regex(/^[1-9][0-9]{5}$/, "Invalid Indian pincode. Must be a 6-digit postal code.");
+
 export const AddressSchema = z.object({
-  label: z.string().min(1),
-  name: z.string().min(1),
-  phone: z.string().min(10),
-  line1: z.string().min(1),
-  line2: z.string().optional(),
-  city: z.string().min(1),
-  state: z.string().min(1),
-  pincode: z.string().min(6).max(6),
+  id: z.string().optional(),
+  _id: z.string().optional(),
+  label: z.string().trim().min(1, "Label is required"),
+  name: z.string().trim().min(1, "Name is required"),
+  phone: IndianPhoneSchema,
+  line1: z.string().trim().min(1, "Address line 1 is required"),
+  line2: z.string().trim().optional(),
+  city: z.string().trim().min(1, "City is required"),
+  state: z.string().trim().min(1, "State is required"),
+  pincode: IndianPincodeSchema,
 });
 export type Address = z.infer<typeof AddressSchema>;
+
+export const CreateAddressInputSchema = z.object({
+  label: z.string().trim().min(1, "Label is required"),
+  name: z.string().trim().min(1, "Name is required"),
+  phone: IndianPhoneSchema,
+  line1: z.string().trim().min(1, "Address line 1 is required"),
+  line2: z.string().trim().optional(),
+  city: z.string().trim().min(1, "City is required"),
+  state: z.string().trim().min(1, "State is required"),
+  pincode: IndianPincodeSchema,
+});
+export type CreateAddressInput = z.infer<typeof CreateAddressInputSchema>;
+
+export const UpdateAddressInputSchema = z.object({
+  label: z.string().trim().min(1).optional(),
+  name: z.string().trim().min(1).optional(),
+  phone: IndianPhoneSchema.optional(),
+  line1: z.string().trim().min(1).optional(),
+  line2: z.string().trim().optional(),
+  city: z.string().trim().min(1).optional(),
+  state: z.string().trim().min(1).optional(),
+  pincode: IndianPincodeSchema.optional(),
+});
+export type UpdateAddressInput = z.infer<typeof UpdateAddressInputSchema>;
+
+export const AddressParamsSchema = z.object({
+  id: z.string().min(1, "Address ID is required"),
+});
+export type AddressParams = z.infer<typeof AddressParamsSchema>;
+
+// ---- Cart ----
+export const MAX_QTY_PER_CART_LINE = 10;
+export const MAX_CART_LINES = 30;
+
+export const CartItemInputSchema = z.object({
+  productId: z.string().trim().min(1, "Product ID is required"),
+  variantSku: z.string().trim().optional(),
+  qty: z
+    .number()
+    .int("Quantity must be an integer")
+    .min(1, "Quantity must be at least 1")
+    .max(MAX_QTY_PER_CART_LINE, `Quantity per line cannot exceed ${MAX_QTY_PER_CART_LINE}`),
+});
+export type CartItemInput = z.infer<typeof CartItemInputSchema>;
+
+export const UpdateCartItemInputSchema = z.object({
+  productId: z.string().trim().min(1, "Product ID is required"),
+  variantSku: z.string().trim().optional(),
+  qty: z
+    .number()
+    .int("Quantity must be an integer")
+    .min(0, "Quantity must be non-negative")
+    .max(MAX_QTY_PER_CART_LINE, `Quantity per line cannot exceed ${MAX_QTY_PER_CART_LINE}`),
+});
+export type UpdateCartItemInput = z.infer<typeof UpdateCartItemInputSchema>;
+
+export const RemoveCartItemInputSchema = z.object({
+  productId: z.string().trim().min(1, "Product ID is required"),
+  variantSku: z.string().trim().optional(),
+});
+export type RemoveCartItemInput = z.infer<typeof RemoveCartItemInputSchema>;
+
+export const MergeCartInputSchema = z.object({
+  items: z
+    .array(CartItemInputSchema)
+    .max(MAX_CART_LINES, `Cart cannot exceed ${MAX_CART_LINES} items`),
+});
+export type MergeCartInput = z.infer<typeof MergeCartInputSchema>;
+
+export const CartResponseItemSchema = z.object({
+  productId: z.string(),
+  variantSku: z.string().optional(),
+  title: z.string(),
+  slug: z.string(),
+  image: z.string().optional(),
+  price: z.number().nonnegative(),
+  stock: z.number().int().nonnegative(),
+  qty: z.number().int().positive(),
+  lineTotal: z.number().nonnegative(),
+});
+export type CartResponseItem = z.infer<typeof CartResponseItemSchema>;
+
+export const CartResponseSchema = z.object({
+  items: z.array(CartResponseItemSchema),
+  itemCount: z.number().int().nonnegative(),
+  subtotal: z.number().nonnegative(),
+});
+export type CartResponse = z.infer<typeof CartResponseSchema>;
 
 export const UserCartItemSchema = z.object({
   productId: z.string().min(1),

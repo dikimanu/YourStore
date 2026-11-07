@@ -2,6 +2,7 @@ import mongoose, { Document, Model, Schema, Types } from "mongoose";
 import { USER_ROLES, UserRole } from "@yourstore/shared";
 
 export interface IAddress {
+  _id?: Types.ObjectId;
   label: string;
   name: string;
   phone: string;
@@ -14,7 +15,7 @@ export interface IAddress {
 
 export interface ICartItem {
   productId: Types.ObjectId;
-  variantSku?: string;
+  variantSku?: string | undefined;
   qty: number;
 }
 
@@ -50,7 +51,7 @@ const AddressSchema = new Schema<IAddress>(
     state: { type: String, required: true, trim: true },
     pincode: { type: String, required: true, trim: true },
   },
-  { _id: false },
+  { _id: true },
 );
 
 const CartItemSchema = new Schema<ICartItem>(

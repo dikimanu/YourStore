@@ -12,6 +12,9 @@ import healthRouter from "./routes/health.js";
 import authRouter from "./routes/auth.js";
 import productsRouter from "./routes/products.js";
 import adminRouter from "./routes/admin.js";
+import cartRouter from "./routes/cart.js";
+import addressesRouter from "./routes/addresses.js";
+import couponsRouter from "./routes/coupons.js";
 import { logger } from "./lib/logger.js";
 
 const app = express();
@@ -46,6 +49,9 @@ app.use(csrfProtection);
 app.use(healthRouter);
 app.use("/api/v1/auth", authLimiter, authRouter);
 app.use("/api/v1/products", productsRouter);
+app.use("/api/v1/cart", cartRouter);
+app.use("/api/v1/addresses", addressesRouter);
+app.use("/api/v1/coupons", couponsRouter);
 app.use("/api/v1/admin", adminRouter);
 
 // 404 and Error handling middlewares
