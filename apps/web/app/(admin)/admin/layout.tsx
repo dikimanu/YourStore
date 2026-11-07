@@ -98,6 +98,12 @@ export default function AdminLayout({ children }: AdminRoleGuardProps) {
             href="/admin"
             className="px-3 py-1.5 rounded-md bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
           >
+            Dashboard
+          </Link>
+          <Link
+            href="/admin/products"
+            className="px-3 py-1.5 rounded-md bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+          >
             Products
           </Link>
           <Link

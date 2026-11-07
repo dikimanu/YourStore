@@ -34,11 +34,16 @@ import {
   adminDeleteCoupon,
 } from "../controllers/adminCoupons.js";
 import { asyncHandler } from "../lib/asyncHandler.js";
+import { AdminStatsQuerySchema } from "@yourstore/shared";
+import { getAdminStats } from "../controllers/adminStats.js";
 
 const router = Router();
 
 // All routes under adminRouter require authentication and admin role
 router.use(authenticate, requireRole("admin"));
+
+// Admin statistics
+router.get("/stats", validateQuery(AdminStatsQuerySchema), asyncHandler(getAdminStats));
 
 // Upload signing
 router.post(

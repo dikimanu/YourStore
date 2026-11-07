@@ -189,7 +189,9 @@ const OrderSchema = new Schema<IOrder>(
 
 OrderSchema.index({ user: 1, createdAt: -1 });
 OrderSchema.index({ "payment.stripeSessionId": 1 }, { sparse: true });
+OrderSchema.index({ createdAt: -1 });
 OrderSchema.index({ status: 1 });
+OrderSchema.index({ createdAt: -1, status: 1 });
 
 export const Order: Model<IOrder> =
   mongoose.models["Order"] || mongoose.model<IOrder>("Order", OrderSchema);

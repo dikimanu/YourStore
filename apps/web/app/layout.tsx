@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { ToastProvider } from "../components/Toast";
 import { CartProvider } from "../lib/CartContext";
@@ -13,7 +13,6 @@ export const metadata: Metadata = {
     template: "%s | YourStore",
   },
   description: "Multi-category e-commerce platform",
-  themeColor: "#2563eb",
 };
 
 export default function RootLayout({
@@ -86,3 +85,5 @@ export default function RootLayout({
     </html>
   );
 }
+
+export const viewport: Viewport = { themeColor: "#2563eb" };

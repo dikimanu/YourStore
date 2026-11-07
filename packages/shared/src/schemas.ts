@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CATEGORIES, ORDER_STATUSES, LISTING_TYPES, USER_ROLES } from "./constants.js";
+import { CATEGORIES, ORDER_STATUSES, LISTING_TYPES, USER_ROLES, type OrderStatus } from "./constants.js";
 
 // ---- Image ----
 export const ImageSchema = z.object({
@@ -670,5 +670,64 @@ export const SignUploadInputSchema = z.object({
     .max(6, "Cannot upload more than 6 images per product"),
 });
 export type SignUploadInput = z.infer<typeof SignUploadInputSchema>;
+
+// ---- Admin Stats Schemas ----
+export const AdminStatsQuerySchema = z.object({
+  days: z
+    .union([z.enum(["7", "30", "90"]), z.literal(7), z.literal(30), z.literal(90)])
+    .default("30")
+    .transform((val) => Number(val) as 7 | 30 | 90),
+});
+export type AdminStatsQuery = z.infer<typeof AdminStatsQuerySchema>;
+
+export const SalesByDayItemSchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  revenue: z.number().nonnegative(),
+  orders: z.number().int().nonnegative(),
+});
+export type SalesByDayItem = z.infer<typeof SalesByDayItemSchema>;
+
+export const OrderCountsSchema = z.record(z.string(), z.number().int().nonnegative());
+export type OrderCounts = Record<OrderStatus, number>;
+
+export const StatsTotalsSchema = z.object({
+  revenue: z.number().nonnegative(),
+  orders: z.number().int().nonnegative(),
+  averageOrderValue: z.number().nonnegative(),
+});
+export type StatsTotals = z.infer<typeof StatsTotalsSchema>;
+
+export const TopProductItemSchema = z.object({
+  productId: z.string(),
+  title: z.string(),
+  units: z.number().int().nonnegative(),
+  revenue: z.number().nonnegative(),
+});
+export type TopProductItem = z.infer<typeof TopProductItemSchema>;
+
+export const LowStockItemSchema = z.object({
+  productId: z.string(),
+  title: z.string(),
+  slug: z.string(),
+  sku: z.string().optional(),
+  stock: z.number().int(),
+});
+export type LowStockItem = z.infer<typeof LowStockItemSchema>;
+
+export const AdminStatsResponseSchema = z.object({
+  salesByDay: z.array(SalesByDayItemSchema),
+  orderCounts: z.record(z.string(), z.number().int().nonnegative()),
+  totals: StatsTotalsSchema,
+  topProducts: z.array(TopProductItemSchema),
+  lowStock: z.array(LowStockItemSchema),
+});
+export type AdminStatsResponse = {
+  salesByDay: SalesByDayItem[];
+  orderCounts: Record<OrderStatus, number>;
+  totals: StatsTotals;
+  topProducts: TopProductItem[];
+  lowStock: LowStockItem[];
+};
+
 
 
