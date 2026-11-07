@@ -15,6 +15,9 @@ import adminRouter from "./routes/admin.js";
 import cartRouter from "./routes/cart.js";
 import addressesRouter from "./routes/addresses.js";
 import couponsRouter from "./routes/coupons.js";
+import checkoutRouter from "./routes/checkout.js";
+import { handleStripeWebhook } from "./controllers/checkout.js";
+import { asyncHandler } from "./lib/asyncHandler.js";
 import { logger } from "./lib/logger.js";
 
 const app = express();
@@ -34,6 +37,13 @@ app.use(generalLimiter);
 // Pino request logger without PII
 app.use(requestLogger);
 
+// Stripe Webhook: MUST be mounted BEFORE express.json with express.raw
+app.post(
+  "/api/v1/webhooks/stripe",
+  express.raw({ type: "application/json" }),
+  asyncHandler(handleStripeWebhook),
+);
+
 // Request body and cookie parsers
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
@@ -52,6 +62,7 @@ app.use("/api/v1/products", productsRouter);
 app.use("/api/v1/cart", cartRouter);
 app.use("/api/v1/addresses", addressesRouter);
 app.use("/api/v1/coupons", couponsRouter);
+app.use("/api/v1/checkout", checkoutRouter);
 app.use("/api/v1/admin", adminRouter);
 
 // 404 and Error handling middlewares

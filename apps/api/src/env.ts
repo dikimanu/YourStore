@@ -29,6 +29,10 @@ function validateEnv() {
       process.env["JWT_REFRESH_SECRET"] || "test_jwt_refresh_secret_32chars_long";
     process.env["CLIENT_ORIGIN"] =
       process.env["CLIENT_ORIGIN"] || "http://localhost:3000";
+    process.env["STRIPE_WEBHOOK_SECRET"] =
+      process.env["STRIPE_WEBHOOK_SECRET"] || "whsec_test_mock_webhook_secret";
+    process.env["STRIPE_SECRET_KEY"] =
+      process.env["STRIPE_SECRET_KEY"] || "sk_test_mock_stripe_key";
   }
 
   const result = envSchema.safeParse(process.env);

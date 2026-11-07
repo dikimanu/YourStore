@@ -99,13 +99,19 @@ describe("Phase 3 Part B: Order Service, Atomic Stock & Coupons (Real In-Memory 
       images: [{ url: "https://example.com/h.jpg", publicId: "h", alt: "Headphones" }],
     });
 
-    user.cart = [
+    await User.updateOne(
+      { _id: user._id },
       {
-        productId: product._id,
-        qty: 1,
+        $set: {
+          cart: [
+            {
+              productId: product._id,
+              qty: 1,
+            },
+          ],
+        },
       },
-    ];
-    await user.save();
+    );
 
     const order = await createOrderFromCart(user._id.toString(), addressId, undefined, "cod");
 
@@ -140,8 +146,10 @@ describe("Phase 3 Part B: Order Service, Atomic Stock & Coupons (Real In-Memory 
       images: [],
     });
 
-    user.cart = [{ productId: vehicle._id, qty: 1 }];
-    await user.save();
+    await User.updateOne(
+      { _id: user._id },
+      { $set: { cart: [{ productId: vehicle._id, qty: 1 }] } },
+    );
 
     await expect(createOrderFromCart(user._id.toString(), addressId, undefined, "stripe")).rejects.toThrow(
       /enquiry-only and cannot be purchased/,
@@ -166,11 +174,15 @@ describe("Phase 3 Part B: Order Service, Atomic Stock & Coupons (Real In-Memory 
       images: [],
     });
 
-    userA.cart = [{ productId: product._id, qty: 1 }];
-    await userA.save();
+    await User.updateOne(
+      { _id: userA._id },
+      { $set: { cart: [{ productId: product._id, qty: 1 }] } },
+    );
 
-    userB.cart = [{ productId: product._id, qty: 1 }];
-    await userB.save();
+    await User.updateOne(
+      { _id: userB._id },
+      { $set: { cart: [{ productId: product._id, qty: 1 }] } },
+    );
 
     // Two concurrent checkouts for the last item
     const results = await Promise.allSettled([
@@ -226,11 +238,17 @@ describe("Phase 3 Part B: Order Service, Atomic Stock & Coupons (Real In-Memory 
       images: [],
     });
 
-    user.cart = [
-      { productId: product1._id, qty: 2 },
-      { productId: product2._id, qty: 1 },
-    ];
-    await user.save();
+    await User.updateOne(
+      { _id: user._id },
+      {
+        $set: {
+          cart: [
+            { productId: product1._id, qty: 2 },
+            { productId: product2._id, qty: 1 },
+          ],
+        },
+      },
+    );
 
     await expect(createOrderFromCart(user._id.toString(), addressId, undefined, "stripe")).rejects.toThrow(
       /Insufficient stock for "Mousepad XXL"/,
@@ -275,11 +293,15 @@ describe("Phase 3 Part B: Order Service, Atomic Stock & Coupons (Real In-Memory 
       isActive: true,
     });
 
-    userA.cart = [{ productId: product._id, qty: 1 }];
-    await userA.save();
+    await User.updateOne(
+      { _id: userA._id },
+      { $set: { cart: [{ productId: product._id, qty: 1 }] } },
+    );
 
-    userB.cart = [{ productId: product._id, qty: 1 }];
-    await userB.save();
+    await User.updateOne(
+      { _id: userB._id },
+      { $set: { cart: [{ productId: product._id, qty: 1 }] } },
+    );
 
     // Two users simultaneously race to claim the single-use coupon
     const results = await Promise.allSettled([
@@ -319,6 +341,7 @@ describe("Phase 3 Part B: Order Service, Atomic Stock & Coupons (Real In-Memory 
       category: "clothing",
       brand: "Nike",
       basePrice: 1000,
+      stock: 0,
       listingType: "purchasable",
       isActive: true,
       images: [],
@@ -371,8 +394,10 @@ describe("Phase 3 Part B: Order Service, Atomic Stock & Coupons (Real In-Memory 
       images: [],
     });
 
-    user.cart = [{ productId: product._id, qty: 1 }];
-    await user.save();
+    await User.updateOne(
+      { _id: user._id },
+      { $set: { cart: [{ productId: product._id, qty: 1 }] } },
+    );
 
     // Two concurrent checkouts triggered on the exact same user cart
     const results = await Promise.allSettled([
@@ -434,8 +459,10 @@ describe("Phase 3 Part B: Order Service, Atomic Stock & Coupons (Real In-Memory 
       images: [],
     });
 
-    user.cart = [{ productId: outOfStockProduct._id, qty: 1 }];
-    await user.save();
+    await User.updateOne(
+      { _id: user._id },
+      { $set: { cart: [{ productId: outOfStockProduct._id, qty: 1 }] } },
+    );
 
     await expect(
       createOrderFromCart(user._id.toString(), addressId, undefined, "cod"),

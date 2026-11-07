@@ -427,6 +427,12 @@ export const PasswordSchema = z
   .regex(/[0-9]/, "Password must contain at least one number")
   .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character");
 
+export const CheckoutStripeInputSchema = z.object({
+  addressId: z.string().trim().min(1, "Address ID is required"),
+  couponCode: z.string().trim().min(1).optional(),
+});
+export type CheckoutStripeInput = z.infer<typeof CheckoutStripeInputSchema>;
+
 export const EmailSchema = z
   .string()
   .trim()
