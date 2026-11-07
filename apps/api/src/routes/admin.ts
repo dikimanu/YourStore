@@ -8,6 +8,7 @@ import {
   CreateCouponInputSchema,
   UpdateCouponInputSchema,
   AdminCouponQuerySchema,
+  AdminReturnDecisionSchema,
 } from "@yourstore/shared";
 import { authenticate, requireRole } from "../middleware/auth.js";
 import { validateBody, validateQuery } from "../middleware/validate.js";
@@ -19,7 +20,13 @@ import {
   adminDeleteProduct,
 } from "../controllers/product.js";
 import { signUpload } from "../controllers/upload.js";
-import { adminGetOrders, adminUpdateOrderStatus } from "../controllers/adminOrders.js";
+import {
+  adminGetOrders,
+  adminUpdateOrderStatus,
+  adminGetReturns,
+  adminDecideReturn,
+  adminRefundOrder,
+} from "../controllers/adminOrders.js";
 import {
   adminListCoupons,
   adminCreateCoupon,
@@ -54,6 +61,15 @@ router.patch(
   validateBody(AdminOrderStatusUpdateSchema),
   asyncHandler(adminUpdateOrderStatus),
 );
+
+// Returns & Refunds management
+router.get("/returns", asyncHandler(adminGetReturns));
+router.patch(
+  "/orders/:id/return",
+  validateBody(AdminReturnDecisionSchema),
+  asyncHandler(adminDecideReturn),
+);
+router.patch("/orders/:id/refund", asyncHandler(adminRefundOrder));
 
 // Coupon management
 router.get("/coupons", validateQuery(AdminCouponQuerySchema), asyncHandler(adminListCoupons));

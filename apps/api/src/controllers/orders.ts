@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { Types } from "mongoose";
+import { RequestReturnInput } from "@yourstore/shared";
 import { Order } from "../models/Order.js";
 import { User } from "../models/User.js";
 import { restoreStock, releaseCoupon } from "../services/order.js";
@@ -162,4 +163,91 @@ export async function cancelOrder(req: Request, res: Response): Promise<void> {
   }
 
   res.status(200).json({ message: "Order cancelled successfully" });
+}
+
+/**
+ * POST /api/v1/orders/:id/return
+ * Request a return on a Delivered order within 7 days.
+ * Atomic conditional update on (_id, user, status = 'Delivered', returnRequest exists: false).
+ */
+export async function requestOrderReturn(req: Request, res: Response): Promise<void> {
+  const userId = req.user?.id;
+  if (!userId) {
+    throw new UnauthorizedError("Authentication required");
+  }
+
+  const { id } = req.params;
+  if (!id || !Types.ObjectId.isValid(id)) {
+    throw new NotFoundError("Order not found");
+  }
+
+  const { reason } = req.body as RequestReturnInput;
+
+  // 1. Strict IDOR verification: Check if order exists for this user
+  const existingOrder = await Order.findOne({
+    _id: id,
+    user: new Types.ObjectId(userId),
+  });
+
+  if (!existingOrder) {
+    throw new NotFoundError("Order not found");
+  }
+
+  if (existingOrder.status !== "Delivered") {
+    throw new BadRequestError(`Cannot request return for order with status "${existingOrder.status}". Order must be Delivered.`);
+  }
+
+  if (existingOrder.returnRequest) {
+    throw new BadRequestError("A return request has already been submitted for this order");
+  }
+
+  // 2. Check 7-day return window from Delivered date in statusHistory
+  const deliveredHistory = [...existingOrder.statusHistory]
+    .reverse()
+    .find((h) => h.status === "Delivered");
+
+  const deliveredAt = deliveredHistory ? new Date(deliveredHistory.at).getTime() : new Date(existingOrder.updatedAt).getTime();
+  const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+  if (Date.now() - deliveredAt > sevenDaysMs) {
+    throw new BadRequestError("Return window has expired. Returns are only allowed within 7 days of delivery.");
+  }
+
+  const now = new Date();
+
+  // 3. Atomic conditional update
+  const updatedOrder = await Order.findOneAndUpdate(
+    {
+      _id: id,
+      user: new Types.ObjectId(userId),
+      status: "Delivered",
+      returnRequest: { $exists: false },
+    },
+    {
+      $set: {
+        status: "ReturnRequested",
+        returnRequest: {
+          reason,
+          requestedAt: now,
+        },
+      },
+      $push: {
+        statusHistory: {
+          status: "ReturnRequested",
+          at: now,
+          by: userId,
+          note: `Return requested: ${reason}`,
+        },
+      },
+    },
+    { new: true },
+  );
+
+  if (!updatedOrder) {
+    throw new BadRequestError("Return request could not be submitted or order was modified concurrently");
+  }
+
+  res.status(200).json({
+    message: "Return request submitted successfully",
+    order: updatedOrder,
+  });
 }

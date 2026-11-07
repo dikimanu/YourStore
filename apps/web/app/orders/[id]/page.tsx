@@ -48,6 +48,15 @@ interface OrderStatusHistoryItem {
   note?: string | undefined;
 }
 
+interface OrderReturnRequest {
+  reason: string;
+  requestedAt: string;
+  decidedAt?: string | undefined;
+  decidedBy?: string | undefined;
+  decision?: "approve" | "reject" | undefined;
+  note?: string | undefined;
+}
+
 interface ApiOrder {
   _id: string;
   id?: string | undefined;
@@ -57,6 +66,7 @@ interface ApiOrder {
   payment: OrderPayment;
   shippingAddress: OrderShippingAddress;
   statusHistory: OrderStatusHistoryItem[];
+  returnRequest?: OrderReturnRequest | undefined;
   couponCode?: string | undefined;
   createdAt: string;
   updatedAt: string;
@@ -88,6 +98,11 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
   const [orderId, setOrderId] = useState<string>("");
+
+  // Return request dialog states
+  const [showReturnModal, setShowReturnModal] = useState(false);
+  const [returnReason, setReturnReason] = useState("");
+  const [submittingReturn, setSubmittingReturn] = useState(false);
 
   useEffect(() => {
     void params.then((p) => setOrderId(p.id));
@@ -132,6 +147,27 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
     }
   };
 
+  const handleRequestReturn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!order) return;
+    const id = order._id ?? order.id ?? "";
+    setSubmittingReturn(true);
+    try {
+      await apiClient(`/api/v1/orders/${id}/return`, {
+        method: "POST",
+        body: JSON.stringify({ reason: returnReason.trim() }),
+      });
+      showToast("Return request submitted successfully", "success");
+      setShowReturnModal(false);
+      setReturnReason("");
+      void fetchOrder();
+    } catch (err) {
+      showToast(err instanceof ApiClientError ? err.message : "Failed to submit return request", "error");
+    } finally {
+      setSubmittingReturn(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[40vh]">
@@ -144,6 +180,17 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
 
   const isCancellable = CANCELLABLE_STATUSES.includes(order.status);
   const oid = order._id ?? order.id ?? "";
+
+  // Check if return eligible: status is Delivered, within 7 days, and no returnRequest yet
+  const deliveredHistory = [...order.statusHistory]
+    .reverse()
+    .find((h) => h.status === "Delivered");
+  const deliveredAt = deliveredHistory
+    ? new Date(deliveredHistory.at).getTime()
+    : new Date(order.updatedAt).getTime();
+  const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+  const isWithinSevenDays = Date.now() - deliveredAt <= sevenDaysMs;
+  const isReturnEligible = order.status === "Delivered" && isWithinSevenDays && !order.returnRequest;
 
   return (
     <div className="max-w-3xl mx-auto space-y-8">
@@ -187,9 +234,56 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                 {cancelling ? "Cancelling…" : "Cancel Order"}
               </button>
             )}
+            {isReturnEligible && (
+              <button
+                type="button"
+                onClick={() => setShowReturnModal(true)}
+                className="text-sm px-4 py-1.5 border border-orange-300 dark:border-orange-800 text-orange-600 dark:text-orange-400 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-950/30 transition font-medium"
+              >
+                Request Return
+              </button>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Return Request Banner (if submitted or decided) */}
+      {order.returnRequest && (
+        <section className="border border-orange-200 dark:border-orange-900 bg-orange-50 dark:bg-orange-950/20 rounded-xl p-6 space-y-2">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-orange-900 dark:text-orange-200">
+              Return Request
+            </h3>
+            <span
+              className={`px-2.5 py-0.5 rounded text-xs font-medium capitalize ${
+                order.returnRequest.decision === "approve"
+                  ? "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300"
+                  : order.returnRequest.decision === "reject"
+                  ? "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300"
+                  : "bg-yellow-100 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-300"
+              }`}
+            >
+              {order.returnRequest.decision ? `Decision: ${order.returnRequest.decision}d` : "Under Review"}
+            </span>
+          </div>
+          <p className="text-sm text-gray-700 dark:text-gray-300">
+            <strong>Reason:</strong> {order.returnRequest.reason}
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Requested on {new Date(order.returnRequest.requestedAt).toLocaleDateString("en-IN", {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+            })}
+          </p>
+          {order.returnRequest.note && (
+            <div className="pt-2 border-t border-orange-200 dark:border-orange-900/60 text-sm">
+              <span className="font-medium text-gray-800 dark:text-gray-200">Admin Note: </span>
+              <span className="text-gray-600 dark:text-gray-300 italic">{order.returnRequest.note}</span>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Items */}
       <section className="border border-gray-200 dark:border-gray-800 rounded-xl bg-white dark:bg-gray-900 overflow-hidden">
@@ -314,6 +408,62 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
             ))}
           </ol>
         </section>
+      )}
+
+      {/* Return Request Modal */}
+      {showReturnModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 w-full max-w-lg shadow-xl space-y-4">
+            <div className="flex items-center justify-between border-b pb-3 border-gray-100 dark:border-gray-800">
+              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Request Return</h2>
+              <button
+                type="button"
+                onClick={() => setShowReturnModal(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={(e) => void handleRequestReturn(e)} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase mb-1">
+                  Reason for Return *
+                </label>
+                <textarea
+                  required
+                  rows={4}
+                  minLength={5}
+                  maxLength={500}
+                  placeholder="Please describe why you would like to return this order (5 to 500 characters)..."
+                  value={returnReason}
+                  onChange={(e) => setReturnReason(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  {returnReason.length}/500 characters (min 5).
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+                <button
+                  type="button"
+                  onClick={() => setShowReturnModal(false)}
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingReturn || returnReason.trim().length < 5}
+                  className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium transition disabled:opacity-50"
+                >
+                  {submittingReturn ? "Submitting..." : "Submit Return Request"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

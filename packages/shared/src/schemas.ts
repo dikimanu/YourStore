@@ -236,6 +236,20 @@ export const OrderPaymentSchema = z.object({
 });
 export type OrderPayment = z.infer<typeof OrderPaymentSchema>;
 
+// ---- Return Request ----
+export const ReturnDecisionSchema = z.enum(["approve", "reject"]);
+export type ReturnDecision = z.infer<typeof ReturnDecisionSchema>;
+
+export const OrderReturnRequestSchema = z.object({
+  reason: z.string().min(5).max(500),
+  requestedAt: z.coerce.date(),
+  decidedAt: z.coerce.date().optional(),
+  decidedBy: z.string().optional(),
+  decision: ReturnDecisionSchema.optional(),
+  note: z.string().max(500).optional(),
+});
+export type OrderReturnRequest = z.infer<typeof OrderReturnRequestSchema>;
+
 // ---- Order ----
 export const OrderSchema = z.object({
   id: z.string().optional(),
@@ -246,6 +260,7 @@ export const OrderSchema = z.object({
   payment: OrderPaymentSchema,
   status: OrderStatusSchema,
   statusHistory: z.array(OrderStatusHistoryItemSchema).default([]),
+  returnRequest: OrderReturnRequestSchema.optional(),
   createdAt: z.coerce.date().optional(),
   updatedAt: z.coerce.date().optional(),
 });
@@ -525,6 +540,21 @@ export const AdminOrderStatusUpdateSchema = z.object({
   status: z.enum(["Processing", "Dispatched", "OutForDelivery", "Delivered"]),
 });
 export type AdminOrderStatusUpdate = z.infer<typeof AdminOrderStatusUpdateSchema>;
+
+export const RequestReturnInputSchema = z.object({
+  reason: z
+    .string()
+    .trim()
+    .min(5, "Reason must be at least 5 characters")
+    .max(500, "Reason cannot exceed 500 characters"),
+});
+export type RequestReturnInput = z.infer<typeof RequestReturnInputSchema>;
+
+export const AdminReturnDecisionSchema = z.object({
+  decision: z.enum(["approve", "reject"]),
+  note: z.string().trim().max(500, "Note cannot exceed 500 characters").optional(),
+});
+export type AdminReturnDecision = z.infer<typeof AdminReturnDecisionSchema>;
 
 export const WishlistInputSchema = z.object({
   productId: z.string().trim().min(1, "Product ID is required"),

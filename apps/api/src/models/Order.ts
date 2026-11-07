@@ -48,6 +48,15 @@ export interface IOrderStatusHistory {
   note?: string | undefined;
 }
 
+export interface IOrderReturnRequest {
+  reason: string;
+  requestedAt: Date;
+  decidedAt?: Date | undefined;
+  decidedBy?: string | undefined;
+  decision?: "approve" | "reject" | undefined;
+  note?: string | undefined;
+}
+
 export interface IOrder extends Document {
   user: Types.ObjectId;
   items: IOrderItemSnapshot[];
@@ -56,6 +65,7 @@ export interface IOrder extends Document {
   payment: IOrderPayment;
   status: OrderStatus;
   statusHistory: IOrderStatusHistory[];
+  returnRequest?: IOrderReturnRequest | undefined;
   couponCode?: string | undefined;
   createdAt: Date;
   updatedAt: Date;
@@ -123,6 +133,18 @@ const OrderStatusHistorySchema = new Schema<IOrderStatusHistory>(
   { _id: false },
 );
 
+const OrderReturnRequestSchema = new Schema<IOrderReturnRequest>(
+  {
+    reason: { type: String, required: true, minlength: 5, maxlength: 500 },
+    requestedAt: { type: Date, required: true, default: Date.now },
+    decidedAt: { type: Date },
+    decidedBy: { type: String },
+    decision: { type: String, enum: ["approve", "reject"] },
+    note: { type: String, maxlength: 500 },
+  },
+  { _id: false },
+);
+
 const OrderSchema = new Schema<IOrder>(
   {
     user: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
@@ -141,6 +163,7 @@ const OrderSchema = new Schema<IOrder>(
       default: "PendingPayment",
     },
     statusHistory: { type: [OrderStatusHistorySchema], default: [] },
+    returnRequest: { type: OrderReturnRequestSchema },
     couponCode: { type: String, uppercase: true, trim: true },
   },
   {
