@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createServer } from "node:http";
-import { AddressInfo } from "node:net";
+import request from "supertest";
 
 // Set required env vars before importing app
 process.env["JWT_ACCESS_SECRET"] = "test_access_secret_32chars_long!!";
@@ -12,18 +11,13 @@ const { app } = await import("../src/index.js");
 
 describe("GET /health", () => {
   it("returns status ok and db down when no MONGO_URI set", async () => {
-    const server = createServer(app);
-    await new Promise<void>((resolve) => server.listen(0, resolve));
-    const { port } = server.address() as AddressInfo;
-
-    const res = await fetch(`http://localhost:${port}/health`);
-    const body = (await res.json()) as { status: string; db: string; uptime: number };
+    const res = await request(app).get("/health");
+    const body = res.body as { status: string; db: string; uptime: number };
 
     expect(res.status).toBe(200);
     expect(body.status).toBe("ok");
     expect(body.db).toBe("down");
     expect(typeof body.uptime).toBe("number");
-
-    server.close();
   });
 });
+

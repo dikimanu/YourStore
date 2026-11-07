@@ -22,6 +22,15 @@ const envSchema = z.object({
 });
 
 function validateEnv() {
+  if (process.env["NODE_ENV"] === "test" || process.env["VITEST"] === "true") {
+    process.env["JWT_ACCESS_SECRET"] =
+      process.env["JWT_ACCESS_SECRET"] || "test_jwt_access_secret_32chars_long!";
+    process.env["JWT_REFRESH_SECRET"] =
+      process.env["JWT_REFRESH_SECRET"] || "test_jwt_refresh_secret_32chars_long";
+    process.env["CLIENT_ORIGIN"] =
+      process.env["CLIENT_ORIGIN"] || "http://localhost:3000";
+  }
+
   const result = envSchema.safeParse(process.env);
   if (!result.success) {
     console.error("❌  Invalid environment variables:\n");
