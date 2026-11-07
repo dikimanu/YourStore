@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useCart } from "@/lib/CartContext";
 import { useToast } from "@/components/Toast";
@@ -83,11 +84,19 @@ export default function CartPage() {
                   className="flex gap-4 p-4 border border-gray-200 dark:border-gray-800 rounded-xl bg-white dark:bg-gray-900"
                 >
                   {item.image && (
-                    <img
-                      src={item.image}
-                      alt={item.title}
-                      className="w-20 h-20 object-cover rounded-lg flex-shrink-0"
-                    />
+                    <div className="relative w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100 dark:bg-gray-800">
+                      <Image
+                        src={item.image}
+                        alt={item.title}
+                        fill
+                        sizes="80px"
+                        className="object-cover"
+                        unoptimized={
+                          item.image.startsWith("https://placehold.co") ||
+                          item.image.startsWith("data:")
+                        }
+                      />
+                    </div>
                   )}
                   <div className="flex-1 min-w-0">
                     <Link

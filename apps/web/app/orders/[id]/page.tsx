@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { apiClient, ApiClientError } from "@/lib/api";
@@ -199,11 +200,19 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
           {order.items.map((item, i) => (
             <div key={i} className="flex gap-4 p-4">
               {item.image && (
-                <img
-                  src={item.image}
-                  alt={item.title}
-                  className="w-16 h-16 object-cover rounded-lg flex-shrink-0"
-                />
+                <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100 dark:bg-gray-800">
+                  <Image
+                    src={item.image}
+                    alt={item.title}
+                    fill
+                    sizes="64px"
+                    className="object-cover"
+                    unoptimized={
+                      item.image.startsWith("https://placehold.co") ||
+                      item.image.startsWith("data:")
+                    }
+                  />
+                </div>
               )}
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm text-gray-900 dark:text-gray-100">{item.title}</p>

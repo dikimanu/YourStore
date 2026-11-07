@@ -444,6 +444,11 @@ export const AdminOrderStatusUpdateSchema = z.object({
 });
 export type AdminOrderStatusUpdate = z.infer<typeof AdminOrderStatusUpdateSchema>;
 
+export const WishlistInputSchema = z.object({
+  productId: z.string().trim().min(1, "Product ID is required"),
+});
+export type WishlistInput = z.infer<typeof WishlistInputSchema>;
+
 export const EmailSchema = z
   .string()
   .trim()
