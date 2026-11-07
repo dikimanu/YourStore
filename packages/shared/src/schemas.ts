@@ -449,6 +449,37 @@ export const WishlistInputSchema = z.object({
 });
 export type WishlistInput = z.infer<typeof WishlistInputSchema>;
 
+export const EnquiryTypeSchema = z.enum(["enquiry", "visit"]);
+export type EnquiryType = z.infer<typeof EnquiryTypeSchema>;
+
+export const CreateEnquiryInputSchema = z
+  .object({
+    productId: z.string().trim().min(1, "Product ID is required"),
+    name: z.string().trim().min(2, "Name must be at least 2 characters").max(100, "Name cannot exceed 100 characters"),
+    phone: IndianPhoneSchema,
+    message: z.string().trim().max(1000, "Message cannot exceed 1000 characters").optional().default(""),
+    type: EnquiryTypeSchema.default("enquiry"),
+    preferredDate: z.coerce.date().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.type === "visit") {
+      if (!data.preferredDate) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["preferredDate"],
+          message: "Preferred date is required for dealership visits",
+        });
+      } else if (data.preferredDate.getTime() <= Date.now()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["preferredDate"],
+          message: "Preferred date must be in the future",
+        });
+      }
+    }
+  });
+export type CreateEnquiryInput = z.infer<typeof CreateEnquiryInputSchema>;
+
 export const EmailSchema = z
   .string()
   .trim()

@@ -61,6 +61,42 @@ export function authenticate(req: Request, _res: Response, next: NextFunction): 
 }
 
 /**
+ * Optional authentication middleware: if token is provided, attaches req.user.
+ * If not provided or invalid, continues without throwing error.
+ */
+export function optionalAuthenticate(req: Request, _res: Response, next: NextFunction): void {
+  try {
+    let token: string | undefined;
+
+    const cookies = req.cookies as Record<string, unknown> | undefined;
+    if (cookies && typeof cookies["accessToken"] === "string") {
+      token = cookies["accessToken"];
+    }
+
+    if (!token && req.headers.authorization?.startsWith("Bearer ")) {
+      token = req.headers.authorization.slice(7).trim();
+    }
+
+    if (token) {
+      try {
+        const payload = verifyAccessToken(token);
+        req.user = {
+          id: payload.sub,
+          role: payload.role,
+          email: payload.email,
+        };
+      } catch {
+        // Token invalid or expired, continue as guest
+      }
+    }
+
+    return next();
+  } catch {
+    return next();
+  }
+}
+
+/**
  * Role authorization middleware. Requires user to have one of the specified roles.
  */
 export function requireRole(...allowedRoles: UserRole[]) {

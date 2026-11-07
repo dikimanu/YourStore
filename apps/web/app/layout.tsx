@@ -4,6 +4,7 @@ import { ToastProvider } from "../components/Toast";
 import { CartProvider } from "../lib/CartContext";
 import { WishlistProvider } from "../lib/WishlistContext";
 import { RecentlyViewedProvider } from "../lib/RecentlyViewedContext";
+import { ApiWakingBanner } from "../components/ApiWakingBanner";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -26,6 +27,7 @@ export default function RootLayout({
           <CartProvider>
             <WishlistProvider>
               <RecentlyViewedProvider>
+                <ApiWakingBanner />
                 <div>
                   <header className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 sticky top-0 z-40">
                     <div className="mx-auto max-w-7xl px-4 py-4 flex items-center justify-between">
@@ -60,8 +62,19 @@ export default function RootLayout({
                   <main className="mx-auto max-w-7xl px-4 py-8">{children}</main>
                 </div>
                 <footer className="border-t border-gray-200 dark:border-gray-800 mt-16">
-                  <div className="mx-auto max-w-7xl px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
-                    &copy; {new Date().getFullYear()} YourStore. All rights reserved.
+                  <div className="mx-auto max-w-7xl px-4 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500 dark:text-gray-400">
+                    <div>&copy; {new Date().getFullYear()} YourStore. All rights reserved.</div>
+                    <div className="flex gap-6 items-center">
+                      <Link href="/privacy" className="hover:underline">
+                        Privacy Policy
+                      </Link>
+                      <Link href="/terms" className="hover:underline">
+                        Terms of Service
+                      </Link>
+                      <Link href="/shipping-and-returns" className="hover:underline">
+                        Shipping &amp; Returns
+                      </Link>
+                    </div>
                   </div>
                 </footer>
               </RecentlyViewedProvider>

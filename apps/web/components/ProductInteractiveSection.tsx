@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { AddToCartButton } from "@/components/AddToCartButton";
 import { VariantSelector } from "@/components/VariantSelector";
 import { WishlistButton } from "@/components/WishlistButton";
+import { VehicleEnquiryForm } from "@/components/VehicleEnquiryForm";
 import type { Product, Variant } from "@yourstore/shared";
 
 interface ProductInteractiveSectionProps {
@@ -78,9 +79,10 @@ export function ProductInteractiveSection({
       {/* Main Desktop Add to Cart / Enquire */}
       <div className="pt-4 border-t border-gray-200 dark:border-gray-800">
         {isEnquiry ? (
-          <div className="w-full text-center py-3.5 px-6 rounded-xl font-semibold bg-amber-500 hover:bg-amber-600 text-white transition cursor-pointer">
-            Submit Enquiry
-          </div>
+          <VehicleEnquiryForm
+            productId={product.id}
+            productTitle={product.title}
+          />
         ) : (
           <AddToCartButton
             productId={product.id}

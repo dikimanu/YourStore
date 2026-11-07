@@ -82,8 +82,35 @@ export default async function ProductDetailPage({
     brand: product.brand,
   };
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.title,
+    description: product.description,
+    image: product.images.map((img) => img.url),
+    brand: {
+      "@type": "Brand",
+      name: product.brand,
+    },
+    offers: {
+      "@type": "Offer",
+      priceCurrency: "INR",
+      price: product.basePrice,
+      availability:
+        product.stock === undefined || product.stock > 0
+          ? "https://schema.org/InStock"
+          : "https://schema.org/OutOfStock",
+      url: `https://yourstore.in/product/${product.slug}`,
+    },
+  };
+
   return (
     <div className="space-y-16 pb-16">
+      {/* Product JSON-LD */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* Breadcrumb */}
       <nav aria-label="Breadcrumb" className="text-sm text-gray-500 dark:text-gray-400">
         <ol className="flex items-center gap-2">
