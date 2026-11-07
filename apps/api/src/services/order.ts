@@ -117,7 +117,7 @@ async function atomicIncrementCoupon(code: string): Promise<ICoupon | null> {
     {
       code: code.toUpperCase(),
       isActive: true,
-      $expr: { $lt: ["$usedCount", "$usageLimit"] },
+      $or: [{ usageLimit: { $exists: false } }, { usageLimit: null }, { $expr: { $lt: ["$usedCount", "$usageLimit"] } }],
     },
     {
       $inc: { usedCount: 1 },
@@ -276,11 +276,11 @@ export async function createOrderFromCart(
         throw new BadRequestError("Coupon not found or inactive");
       }
 
-      if (new Date(coupon.expiresAt).getTime() <= Date.now()) {
+      if (coupon.expiresAt && new Date(coupon.expiresAt).getTime() <= Date.now()) {
         throw new BadRequestError("Coupon has expired");
       }
 
-      if (coupon.usedCount >= coupon.usageLimit) {
+      if (coupon.usageLimit !== undefined && coupon.usageLimit !== null && coupon.usedCount >= coupon.usageLimit) {
         throw new BadRequestError("Coupon usage limit has been reached");
       }
 

@@ -18,12 +18,12 @@ export async function validateCoupon(req: Request, res: Response): Promise<void>
   }
 
   // Check expiration
-  if (new Date(coupon.expiresAt).getTime() <= Date.now()) {
+  if (coupon.expiresAt && new Date(coupon.expiresAt).getTime() <= Date.now()) {
     throw new BadRequestError("Coupon has expired");
   }
 
   // Check usage limit
-  if (coupon.usedCount >= coupon.usageLimit) {
+  if (coupon.usageLimit !== undefined && coupon.usageLimit !== null && coupon.usedCount >= coupon.usageLimit) {
     throw new BadRequestError("Coupon usage limit has been reached");
   }
 

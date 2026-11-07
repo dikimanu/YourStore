@@ -5,6 +5,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { ProductGallery } from "@/components/ProductGallery";
 import { ProductInteractiveSection } from "@/components/ProductInteractiveSection";
 import { RecentlyViewed } from "@/components/RecentlyViewed";
+import { ProductReviewsSection } from "@/components/ProductReviewsSection";
 import { fetchProductBySlug, fetchRelatedProducts } from "@/lib/serverApi";
 import { imageUrl, Product } from "@yourstore/shared";
 
@@ -199,6 +200,13 @@ export default async function ProductDetailPage({
           </div>
         </section>
       )}
+
+      {/* Reviews & Ratings Section */}
+      <ProductReviewsSection
+        productId={product.id}
+        ratingAvg={product.ratingAvg ?? 0}
+        ratingCount={product.ratingCount ?? 0}
+      />
 
       {/* Recently Viewed */}
       <RecentlyViewed currentProduct={currentViewedItem} />

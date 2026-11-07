@@ -19,6 +19,7 @@ import checkoutRouter from "./routes/checkout.js";
 import ordersRouter from "./routes/orders.js";
 import wishlistRouter from "./routes/wishlist.js";
 import enquiriesRouter from "./routes/enquiries.js";
+import reviewsRouter from "./routes/reviews.js";
 import { handleStripeWebhook } from "./controllers/checkout.js";
 import { asyncHandler } from "./lib/asyncHandler.js";
 import { logger } from "./lib/logger.js";
@@ -69,6 +70,7 @@ app.use("/api/v1/checkout", checkoutRouter);
 app.use("/api/v1/orders", ordersRouter);
 app.use("/api/v1/wishlist", wishlistRouter);
 app.use("/api/v1/enquiries", enquiriesRouter);
+app.use("/api/v1/reviews", reviewsRouter);
 app.use("/api/v1/admin", adminRouter);
 
 // 404 and Error handling middlewares

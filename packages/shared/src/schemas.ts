@@ -253,12 +253,30 @@ export type Order = z.infer<typeof OrderSchema>;
 
 // ---- Review ----
 export const ReviewSchema = z.object({
+  id: z.string().optional(),
   user: z.string(),
   product: z.string(),
   rating: z.number().int().min(1).max(5),
   title: z.string().min(1).max(100),
-  body: z.string().min(10).max(2000),
+  body: z.string().min(1).max(2000),
+  createdAt: z.coerce.date().optional(),
 });
+export type Review = z.infer<typeof ReviewSchema>;
+
+export const CreateReviewInputSchema = z.object({
+  productId: z.string().trim().min(1, "Product ID is required"),
+  rating: z.number().int("Rating must be an integer").min(1, "Rating must be between 1 and 5").max(5, "Rating must be between 1 and 5"),
+  title: z.string().trim().min(1, "Title is required").max(100, "Title cannot exceed 100 characters"),
+  body: z.string().trim().min(1, "Review body is required").max(2000, "Review body cannot exceed 2000 characters"),
+});
+export type CreateReviewInput = z.infer<typeof CreateReviewInputSchema>;
+
+export const ReviewQuerySchema = z.object({
+  productId: z.string().trim().min(1, "Product ID is required"),
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(50).default(10),
+});
+export type ReviewQuery = z.infer<typeof ReviewQuerySchema>;
 
 // ---- Coupon ----
 export const CouponTypeSchema = z.enum(["percent", "fixed"]);
@@ -281,6 +299,70 @@ export const ValidateCouponInputSchema = z.object({
   subtotal: z.number().nonnegative("Subtotal must be non-negative"),
 });
 export type ValidateCouponInput = z.infer<typeof ValidateCouponInputSchema>;
+
+export const CouponCodeSchema = z
+  .string()
+  .trim()
+  .min(3, "Code must be at least 3 characters")
+  .max(20, "Code cannot exceed 20 characters")
+  .regex(/^[A-Za-z0-9-]+$/, "Code must contain only letters, numbers, and dashes")
+  .transform((val) => val.toUpperCase());
+
+export const CreateCouponInputSchema = z
+  .object({
+    code: CouponCodeSchema,
+    type: CouponTypeSchema,
+    value: z.number().int("Value must be an integer").positive("Value must be a positive integer"),
+    minOrder: z.number().nonnegative("Minimum order must be >= 0").default(0),
+    expiresAt: z.coerce.date().optional(),
+    usageLimit: z.number().int("Usage limit must be an integer").positive("Usage limit must be a positive integer").optional(),
+    isActive: z.boolean().default(true),
+  })
+  .superRefine((data, ctx) => {
+    if (data.type === "percent" && (data.value < 1 || data.value > 100)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["value"],
+        message: "Percentage value must be between 1 and 100",
+      });
+    }
+    if (data.expiresAt && data.expiresAt.getTime() <= Date.now()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["expiresAt"],
+        message: "Expiry date must be in the future",
+      });
+    }
+  });
+export type CreateCouponInput = z.infer<typeof CreateCouponInputSchema>;
+
+export const UpdateCouponInputSchema = z
+  .object({
+    type: CouponTypeSchema.optional(),
+    value: z.number().int("Value must be an integer").positive("Value must be a positive integer").optional(),
+    minOrder: z.number().nonnegative("Minimum order must be >= 0").optional(),
+    expiresAt: z.coerce.date().nullable().optional(),
+    usageLimit: z.number().int("Usage limit must be an integer").positive("Usage limit must be a positive integer").nullable().optional(),
+    isActive: z.boolean().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.type === "percent" && data.value !== undefined && (data.value < 1 || data.value > 100)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["value"],
+        message: "Percentage value must be between 1 and 100",
+      });
+    }
+  });
+export type UpdateCouponInput = z.infer<typeof UpdateCouponInputSchema>;
+
+export const AdminCouponQuerySchema = z.object({
+  search: z.string().trim().optional(),
+  status: z.enum(["all", "active", "expired", "inactive"]).default("all"),
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(20),
+});
+export type AdminCouponQuery = z.infer<typeof AdminCouponQuerySchema>;
 
 export const ValidateCouponResponseSchema = z.object({
   valid: z.literal(true),

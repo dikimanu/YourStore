@@ -5,6 +5,9 @@ import {
   ProductQuerySchema,
   SignUploadInputSchema,
   AdminOrderStatusUpdateSchema,
+  CreateCouponInputSchema,
+  UpdateCouponInputSchema,
+  AdminCouponQuerySchema,
 } from "@yourstore/shared";
 import { authenticate, requireRole } from "../middleware/auth.js";
 import { validateBody, validateQuery } from "../middleware/validate.js";
@@ -17,6 +20,12 @@ import {
 } from "../controllers/product.js";
 import { signUpload } from "../controllers/upload.js";
 import { adminGetOrders, adminUpdateOrderStatus } from "../controllers/adminOrders.js";
+import {
+  adminListCoupons,
+  adminCreateCoupon,
+  adminUpdateCoupon,
+  adminDeleteCoupon,
+} from "../controllers/adminCoupons.js";
 import { asyncHandler } from "../lib/asyncHandler.js";
 
 const router = Router();
@@ -45,6 +54,12 @@ router.patch(
   validateBody(AdminOrderStatusUpdateSchema),
   asyncHandler(adminUpdateOrderStatus),
 );
+
+// Coupon management
+router.get("/coupons", validateQuery(AdminCouponQuerySchema), asyncHandler(adminListCoupons));
+router.post("/coupons", validateBody(CreateCouponInputSchema), asyncHandler(adminCreateCoupon));
+router.patch("/coupons/:id", validateBody(UpdateCouponInputSchema), asyncHandler(adminUpdateCoupon));
+router.delete("/coupons/:id", asyncHandler(adminDeleteCoupon));
 
 export default router;
 

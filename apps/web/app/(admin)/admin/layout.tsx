@@ -107,6 +107,12 @@ export default function AdminLayout({ children }: AdminRoleGuardProps) {
             Orders
           </Link>
           <Link
+            href="/admin/coupons"
+            className="px-3 py-1.5 rounded-md bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+          >
+            Coupons
+          </Link>
+          <Link
             href="/admin/products/new"
             className="px-3 py-1.5 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition font-medium"
           >
