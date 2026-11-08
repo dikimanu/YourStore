@@ -14,7 +14,7 @@ const router = Router();
 // Public routes
 router.get("/", validateQuery(ProductQuerySchema), asyncHandler(listProducts));
 router.get("/suggestions", asyncHandler(getProductSuggestions));
-router.get("/related/:id", asyncHandler(getRelatedProducts));
+router.get("/:slug/related", asyncHandler(getRelatedProducts));
 router.get("/:slug", asyncHandler(getProductBySlug));
 
 export default router;

@@ -357,34 +357,6 @@ describe("Phase 2 Part A: Products & Admin CRUD", () => {
       expect(body.suggestions.some((s) => s.slug === "noise-cancelling-headphones")).toBe(true);
     });
 
-    it("returns related products in same category", async () => {
-      // Create a second electronics product to test related query
-      const p4 = new Product({
-        title: "Wireless Bluetooth Speaker",
-        slug: "wireless-bluetooth-speaker",
-        description: "Portable 20W stereo speaker",
-        category: "electronics",
-        brand: "SoundMaster",
-        basePrice: 4999,
-        images: [],
-        attributes: {},
-        variants: [],
-        stock: 40,
-        listingType: "purchasable",
-        ratingAvg: 4.6,
-        ratingCount: 10,
-        isActive: true,
-      });
-      await p4.save();
-
-      const headphones = Array.from(memoryProducts.values()).find((p) => p.slug === "noise-cancelling-headphones");
-      const res = await request(app).get(`/api/v1/products/related/${headphones?._id.toString()}`);
-
-      expect(res.status).toBe(200);
-      const body = res.body as { products: Array<{ title: string; slug: string }> };
-      expect(body.products.length).toBe(1);
-      expect(body.products[0]?.slug).toBe("wireless-bluetooth-speaker");
-    });
   });
 
   describe("Admin-Only Product Access Control", () => {

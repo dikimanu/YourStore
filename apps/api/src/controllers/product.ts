@@ -172,20 +172,25 @@ export async function getProductSuggestions(req: Request, res: Response): Promis
  * Public: Related products based on category, excluding current product.
  */
 export async function getRelatedProducts(req: Request, res: Response): Promise<void> {
-  const { id } = req.params;
+  const { slug } = req.params;
 
-  const current = await Product.findById(id).lean();
+  const current = await Product.findOne({
+    slug: slug?.toLowerCase(),
+    isActive: true,
+  }).lean();
+
   if (!current) {
     throw new NotFoundError("Product not found");
   }
 
   const related = await Product.find({
     category: current.category,
-    _id: { $ne: current._id },
+    listingType: "purchasable",
     isActive: true,
+    _id: { $ne: current._id },
   })
     .sort({ ratingAvg: -1, createdAt: -1 })
-    .limit(4)
+    .limit(8)
     .lean();
 
   res.status(200).json({
