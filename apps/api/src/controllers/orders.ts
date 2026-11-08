@@ -6,7 +6,7 @@ import { User } from "../models/User.js";
 import { restoreStock, releaseCoupon } from "../services/order.js";
 import { getStripeClient } from "../lib/stripe.js";
 import { sendOrderStatusEmail } from "../lib/email.js";
-import { BadRequestError, NotFoundError, UnauthorizedError } from "../lib/errors.js";
+import { BadRequestError, ConflictError, NotFoundError, UnauthorizedError } from "../lib/errors.js";
 import { logger } from "../lib/logger.js";
 
 /**
@@ -82,9 +82,9 @@ export async function cancelOrder(req: Request, res: Response): Promise<void> {
     throw new NotFoundError("Order not found");
   }
 
-  // 1. Ownership check & check status
-  const existingOrder = await Order.findById(id);
-  if (!existingOrder || existingOrder.user.toString() !== userId) {
+  // 1. Ownership is part of the query (404 for other users' orders)
+  const existingOrder = await Order.findOne({ _id: id, user: new Types.ObjectId(userId) });
+  if (!existingOrder) {
     throw new NotFoundError("Order not found");
   }
 
@@ -93,7 +93,30 @@ export async function cancelOrder(req: Request, res: Response): Promise<void> {
     throw new BadRequestError(`Cannot cancel order in "${existingOrder.status}" status`);
   }
 
-  // 2. Atomic conditional status update to Cancelled
+  // 2. For a pending Stripe order, expire the session FIRST so a late payment cannot succeed
+  const isPendingStripe =
+    existingOrder.status === "PendingPayment" && existingOrder.payment.method === "stripe";
+  const pendingSessionId = existingOrder.payment.stripeSessionId;
+  if (isPendingStripe && pendingSessionId) {
+    const stripe = getStripeClient();
+    try {
+      await stripe.checkout.sessions.expire(pendingSessionId);
+    } catch (expireErr) {
+      let paymentComplete = false;
+      try {
+        const session = await stripe.checkout.sessions.retrieve(pendingSessionId);
+        paymentComplete = session.status === "complete";
+      } catch (retrieveErr) {
+        logger.warn({ err: retrieveErr }, "Could not retrieve Stripe session during cancel");
+      }
+      if (paymentComplete) {
+        throw new ConflictError("Payment is in progress. Please try again in a moment.");
+      }
+      logger.warn({ err: expireErr }, "Stripe session expire failed or session already expired");
+    }
+  }
+
+  // 3. Atomic conditional status update to Cancelled
   const cancelledOrder = await Order.findOneAndUpdate(
     {
       _id: id,
@@ -118,28 +141,14 @@ export async function cancelOrder(req: Request, res: Response): Promise<void> {
     throw new BadRequestError("Order could not be cancelled or was already cancelled");
   }
 
-  // 3. Compensation: restore stock and release coupon
+  // 4. Compensation: restore stock and coupon, restore cart only if it is empty
   const rollbackPromises: Promise<unknown>[] = [
     restoreStock(cancelledOrder),
     releaseCoupon(cancelledOrder),
   ];
 
-  const wasPendingPayment = cancelledOrder.status === "PendingPayment";
-  const isStripe = cancelledOrder.payment?.method === "stripe";
-
-  // For a PendingPayment stripe order, expire stripe session and restore user cart
-  if (wasPendingPayment && isStripe) {
-    const sessionId = cancelledOrder.payment.stripeSessionId;
-    if (sessionId) {
-      try {
-        const stripe = getStripeClient();
-        await stripe.checkout.sessions.expire(sessionId);
-      } catch (stripeErr) {
-        logger.warn({ err: stripeErr }, "Stripe session expire failed or session already expired");
-      }
-    }
-
-    if (cancelledOrder.items && cancelledOrder.items.length > 0) {
+  if (cancelledOrder.status === "PendingPayment" && cancelledOrder.payment.method === "stripe") {
+    if (cancelledOrder.items.length > 0) {
       const cartItemsToRestore = cancelledOrder.items.map((i) => {
         const itemObj: { productId: Types.ObjectId; variantSku?: string | undefined; qty: number } = {
           productId: i.productId,
@@ -151,7 +160,10 @@ export async function cancelOrder(req: Request, res: Response): Promise<void> {
         return itemObj;
       });
       rollbackPromises.push(
-        User.updateOne({ _id: userId }, { $set: { cart: cartItemsToRestore } }),
+        User.updateOne(
+          { _id: userId, cart: { $size: 0 } },
+          { $set: { cart: cartItemsToRestore } },
+        ),
       );
     }
   }
@@ -163,7 +175,31 @@ export async function cancelOrder(req: Request, res: Response): Promise<void> {
     }
   }
 
-  void sendOrderStatusEmail(cancelledOrder, "cancelled").catch(() => {});
+  // 5. Refund a paid Stripe order (idempotent)
+  const paymentIntentId = cancelledOrder.payment.paymentIntentId;
+  if (
+    cancelledOrder.payment.method === "stripe" &&
+    cancelledOrder.payment.status === "paid" &&
+    paymentIntentId
+  ) {
+    try {
+      const stripe = getStripeClient();
+      await stripe.refunds.create(
+        { payment_intent: paymentIntentId },
+        { idempotencyKey: `refund-${cancelledOrder._id.toString()}` },
+      );
+      await Order.updateOne({ _id: cancelledOrder._id }, { $set: { "payment.status": "refunded" } });
+    } catch (refundErr) {
+      logger.error(
+        { err: refundErr, orderId: cancelledOrder._id.toString() },
+        "Refund failed for cancelled paid order: manual refund needed",
+      );
+    }
+  }
+
+  void sendOrderStatusEmail(cancelledOrder, "cancelled").catch((emailErr: unknown) => {
+    logger.warn({ err: emailErr }, "Failed to send cancellation email");
+  });
 
   res.status(200).json({ message: "Order cancelled successfully" });
 }
