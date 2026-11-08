@@ -123,7 +123,6 @@ const UserSchema = new Schema<IUser>(
 );
 
 UserSchema.index({ createdAt: -1 });
-UserSchema.index({ email: 1 });
 
 UserSchema.methods["isLocked"] = function (this: IUser): boolean {
   return Boolean(this.lockUntil && this.lockUntil.getTime() > Date.now());

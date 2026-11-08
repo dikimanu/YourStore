@@ -18,6 +18,11 @@ function formatAttribute(value: unknown): string {
 }
 
 export const revalidate = 60;
+export const dynamicParams = true;
+
+export function generateStaticParams() {
+  return [];
+}
 
 interface ProductDetailPageProps {
   params: Promise<{ slug: string }>;

@@ -8,6 +8,11 @@ import { fetchProducts } from "@/lib/serverApi";
 import { CATEGORIES, Category, Product } from "@yourstore/shared";
 
 export const revalidate = 60;
+export const dynamicParams = true;
+
+export function generateStaticParams() {
+  return CATEGORIES.map((category) => ({ category }));
+}
 
 interface CategoryPageProps {
   params: Promise<{ category: string }>;
