@@ -10,7 +10,7 @@ test("Admin: advance newest Placed order to Processing", async ({ page }) => {
 
   // 2. Open /admin/orders
   await page.goto("/admin/orders");
-  await expect(page.getByRole("heading", { name: "Orders Management" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Order Management" })).toBeVisible();
 
   // 3. Find the newest row with status "Placed" and advance it
   const rows = page.locator("tbody tr");

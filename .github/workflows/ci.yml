@@ -2,44 +2,60 @@ name: CI
 
 on:
   push:
-    branches: ["main", "dev"]
   pull_request:
-    branches: ["main"]
 
 jobs:
   ci:
-    name: Lint, Typecheck, Test & Build
     runs-on: ubuntu-latest
 
+    services:
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+
+    env:
+      MONGO_URI_TEST: mongodb://localhost:27017/yourstore_test
+      MONGO_URI: mongodb://localhost:27017/yourstore_ci
+      JWT_ACCESS_SECRET: dummy_jwt_access_secret_32_characters_long!
+      JWT_REFRESH_SECRET: dummy_jwt_refresh_secret_32_characters_long!
+      CLIENT_ORIGIN: http://localhost:3000
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      API_URL: http://localhost:4000
+      REVALIDATE_SECRET: dummy_revalidate_secret_key_12345
+      NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: dummy
+      STRIPE_SECRET_KEY: sk_test_dummy
+
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 24
+      - name: Set up Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: "24"
-          cache: "npm"
+          node-version: 20
+          cache: npm
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
-      - name: Lint
-        run: npm run lint
+      - name: Build shared package
+        run: npm run build --workspace=@yourstore/shared
 
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Test
+      - name: Lint
+        run: npm run lint
+
+      - name: Run unit & integration tests
+        env:
+          NODE_ENV: test
         run: npm test
 
-      - name: Build shared
-        run: npm run build --workspace=packages/shared
+      - name: Build all packages
+        run: npm run build
 
-      - name: Build API
-        run: npm run build --workspace=apps/api
-
-      - name: Build Web
-        run: npm run build --workspace=apps/web
-        env:
-          API_URL: http://localhost:4000
+      - name: Audit dependencies
+        run: npm audit --omit=dev --audit-level=critical
+        continue-on-error: true
