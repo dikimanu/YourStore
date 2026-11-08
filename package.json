@@ -15,10 +15,13 @@
     "lint": "eslint",
     "typecheck": "tsc --build",
     "test": "vitest run",
-    "format": "prettier --write \"**/*.{ts,tsx,json,md}\" --ignore-path .gitignore"
+    "format": "prettier --write \"**/*.{ts,tsx,json,md}\" --ignore-path .gitignore",
+    "test:e2e": "playwright test",
+    "seed": "npm run seed --workspace=@yourstore/api"
   },
   "devDependencies": {
     "@next/eslint-plugin-next": "^16.4.5",
+    "@playwright/test": "^1.50.0",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
     "concurrently": "^9.0.0",

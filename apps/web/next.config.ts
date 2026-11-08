@@ -25,8 +25,8 @@ const nextConfig: NextConfig = {
     return [
       {
         // Don't proxy internal next.js api routes like /api/revalidate
-        source: "/api/((?!revalidate).*)",
-        destination: `${apiUrl}/api/$1`,
+        source: "/api/:path((?!revalidate).*)",
+        destination: `${apiUrl}/api/:path`,
       },
     ];
   },
