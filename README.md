@@ -207,7 +207,7 @@ Follow these numbered steps to deploy YourStore to production on free tiers:
 
 - **Guest Cart:** Guest cart items are maintained in browser memory and persist across navigation, but will reset upon a full page reload until the user logs in.
 - **Expired Stripe Sessions:** If a customer completes payment through Stripe after a checkout session has expired on the backend, a manual refund or status reconciliation must be performed.
-- **Playwright E2E Tests:** End-to-end tests are configured and ready in the repository but have not yet been executed or passed against live test environments.
+- **Playwright E2E Tests:** Run locally with the API on :4000 and web on :3000 already running (npm run test:e2e). They are not run in CI because they need a seeded database and running servers.
 - **Cancelling paid Stripe orders:** cancelling a paid Stripe order refunds it automatically through Stripe. If the refund call fails, the error is logged with the order id and needs a manual refund.
 - **PWA Icons:** Manifest icons in `apps/web` use placeholder assets.
 - **Audit Advisories:** `npm audit` reports minor advisories on `postcss` (bundled transitively in Next.js 15) and `zod` pending upstream package releases.
