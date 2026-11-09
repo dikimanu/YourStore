@@ -90,7 +90,7 @@ export default function AdminLayout({ children }: AdminRoleGuardProps) {
           </span>
           <h1 className="text-2xl font-bold">Store Administration</h1>
         </div>
-        <div className="flex items-center gap-4 text-sm">
+        <div className="flex items-center gap-4 text-sm overflow-x-auto whitespace-nowrap max-w-full pb-2 md:pb-0 [&>*]:shrink-0">
           <span className="text-gray-500 dark:text-gray-400">
             Signed in as <strong>{currentUser?.email}</strong>
           </span>
