@@ -1,9 +1,10 @@
 # YourStore
 
-A production-ready, multi-category full-stack e-commerce platform built as a TypeScript monorepo with Next.js App Router and Express.
+A production-ready, multi-category full-stack e-commerce platform (Gadgets, Electronics, Clothing, Vehicles, Home, Foods & Grocery, Books, Health & Wellness, Lab & Industrial Supplies) built as a TypeScript monorepo with Next.js App Router and Express.
 
-- **Live demo:** [https://yourstore.example.com](https://yourstore.example.com) *(link placeholder)*
-- **Screenshots:** *(placeholder)*
+- **Live demo:** [https://your-store-lemon.vercel.app](https://your-store-lemon.vercel.app)
+- **API health:** [https://yourstore-api-t47n.onrender.com/health](https://yourstore-api-t47n.onrender.com/health) *(free tier: the first request after idle may take about a minute)*
+- **Screenshots:** *(add 3 to 4 images: home hero, product page, admin dashboard, mobile view)*
 
 ---
 
@@ -32,31 +33,36 @@ A production-ready, multi-category full-stack e-commerce platform built as a Typ
 ## Features
 
 ### Customer Storefront
-- Multi-category product catalog with debounced search, facets, and sorting.
+- Nine product categories with debounced search, facets, and sorting.
 - Product detail pages with dynamic variants, stock availability, category attributes, and vehicle enquiry forms.
-- ISR (`revalidate: 60`) for home, category, and product detail pages with instant on-demand revalidation.
+- ISR (`revalidate: 60`) for category and product detail pages with on-demand revalidation.
 - Shopping cart with guest-to-account cart merging upon authentication.
-- Multi-step checkout with saved address management, coupon code discounts, Stripe Checkout, and Cash on Delivery.
-- Customer dashboard for order tracking, order timeline status, cancellations, and return requests.
-- Wishlist, recently viewed items, product customer reviews, and responsive sticky mobile navigation.
+- Checkout with saved addresses, coupon codes, Stripe Checkout, and Cash on Delivery.
+- Order tracking with status timeline, cancellations, return requests, and invoice PDF download.
+- Wishlist, recently viewed items, and product customer reviews.
+- Netflix-style hero carousel on the home page (auto-advance, swipe, keyboard and reduced-motion support).
+- Show/hide password toggle on all password fields, and a profile avatar menu (name, email, orders, admin link, sign out).
+- Sticky blurred header with mobile drawer menu, responsive layouts from 320px phones to desktop, and dark mode.
+- Contact page and a full footer with social links.
+- Installable PWA (manifest), Product JSON-LD, sitemap and robots for SEO.
 
 ### Admin Dashboard
 - Analytics dashboard with sales-by-day charts, KPI totals, status breakdowns, top-selling products, and low-stock alerts.
 - Order management with date, status, payment method/status filtering, search, and forward status progression.
-- Return request decision management (approve, reject, process refunds).
+- Return request decisions (approve, reject, process refunds).
 - Catalog management with create, edit, inline stock adjustment, and soft deletion.
-- Bulk product import via CSV with browser preview, formula injection sanitization, and atomic commit.
+- Bulk product import via CSV with browser preview, formula injection protection, and all-or-nothing commit.
 - Coupon management (percentage / flat discounts, expiry, usage limits).
-- Customer directory with lifetime order counts and total spend aggregation.
-- Enquiries & scheduled showroom visit management.
-- System audit log monitoring with actor attribution.
+- Customer directory with lifetime order counts and total spend.
+- Enquiries and showroom visit management.
+- Audit log with actor attribution.
 
 ---
 
 ## Local Setup
 
 ### Prerequisites
-- Node.js `24.x` (or `>= 20.x`)
+- Node.js `>= 20.x`
 - npm `10.x` or higher
 - Local or cloud MongoDB instance
 - Stripe CLI (optional, for local webhook testing)
@@ -65,71 +71,66 @@ A production-ready, multi-category full-stack e-commerce platform built as a Typ
 
 1. **Clone and install dependencies:**
    ```bash
-   git clone https://github.com/your-org/yourstore.git
-   cd yourstore
+   git clone https://github.com/dikimanu/YourStore.git
+   cd YourStore
    npm install
    ```
 
-2. **Environment Files:**
-   Copy `.env.example` in both apps:
+2. **Environment files:**
    ```bash
    cp apps/api/.env.example apps/api/.env
-   cp apps/web/.env.example apps/web/.env
+   cp apps/web/.env.example apps/web/.env.local
    ```
 
-3. **Required Environment Variables:**
+3. **Required environment variables:**
    - **`apps/api/.env`**:
-     - `PORT`: Port for Express API server (e.g. 4000).
-     - `NODE_ENV`: Application environment (`development` or `production`).
+     - `PORT`: Port for the Express API (e.g. 4000).
+     - `NODE_ENV`: `development` or `production`.
      - `MONGO_URI`: MongoDB connection string.
-     - `JWT_ACCESS_SECRET`: Secret key for signing 15-minute access tokens (min 32 chars).
-     - `JWT_REFRESH_SECRET`: Secret key for signing 7-day refresh tokens (min 32 chars).
-     - `CLIENT_ORIGIN`: Allowed CORS frontend origin URL (e.g. `http://localhost:3000`).
-     - `CLOUDINARY_CLOUD_NAME`: Cloudinary account cloud name.
-     - `CLOUDINARY_API_KEY`: Cloudinary API credential key.
-     - `CLOUDINARY_API_SECRET`: Cloudinary API credential secret.
-     - `STRIPE_SECRET_KEY`: Stripe API secret key (`sk_test_...`).
-     - `STRIPE_WEBHOOK_SECRET`: Stripe signing secret for webhook verification (`whsec_...`).
-     - `RESEND_API_KEY`: Resend API key for sending emails.
-     - `EMAIL_FROM`: Sender email address for notifications.
-     - `REVALIDATE_SECRET`: Shared secret token for Next.js on-demand ISR revalidation.
-     - `SENTRY_DSN`: Optional Sentry DSN for API error reporting.
+     - `JWT_ACCESS_SECRET`: Secret for 15-minute access tokens (min 16 chars, 32+ recommended).
+     - `JWT_REFRESH_SECRET`: Secret for 7-day refresh tokens (min 16 chars, 32+ recommended).
+     - `CLIENT_ORIGIN`: Allowed CORS origin (e.g. `http://localhost:3000`).
+     - `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`: Cloudinary credentials.
+     - `STRIPE_SECRET_KEY`: Stripe secret key (`sk_test_...`).
+     - `STRIPE_WEBHOOK_SECRET`: Stripe webhook signing secret (`whsec_...`).
+     - `RESEND_API_KEY`: Resend API key.
+     - `EMAIL_FROM`: Sender address for emails.
+     - `REVALIDATE_SECRET`: Shared secret for on-demand revalidation.
+     - `SENTRY_DSN`: Optional Sentry DSN.
      - `SHIPPING_FLAT`: Flat shipping charge in INR.
-     - `FREE_SHIPPING_THRESHOLD`: Order subtotal threshold in INR for free shipping.
-     - `TAX_PERCENT`: Applicable GST percentage rate.
-     - `SEED_ADMIN_PASSWORD`: Default password for the seeded admin user.
-     - `SEED_USER_PASSWORD`: Default password for the seeded customer user.
-   - **`apps/web/.env`**:
-     - `NEXT_PUBLIC_SITE_URL`: Canonical site URL (e.g. `http://localhost:3000`).
-     - `API_URL`: Backend API URL targeted by Next.js server calls and rewrites (e.g. `http://localhost:4000`).
-     - `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`: Public cloud name for frontend image delivery.
-     - `REVALIDATE_SECRET`: Shared secret matching the API for revalidation authorization.
-     - `NEXT_PUBLIC_SENTRY_DSN`: Optional Sentry DSN for web client error tracking.
+     - `FREE_SHIPPING_THRESHOLD`: Subtotal in INR above which shipping is free.
+     - `TAX_PERCENT`: GST percentage.
+     - `SEED_ADMIN_PASSWORD`, `SEED_USER_PASSWORD`: Passwords for the seeded admin and customer.
+   - **`apps/web/.env.local`**:
+     - `NEXT_PUBLIC_SITE_URL`: Canonical site URL.
+     - `API_URL`: Backend URL used by server calls and the `/api/*` rewrite.
+     - `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`: Public Cloudinary cloud name.
+     - `REVALIDATE_SECRET`: Must match the API value.
+     - `NEXT_PUBLIC_SENTRY_DSN`: Optional Sentry DSN.
 
 4. **Build shared packages:**
    ```bash
    npm run build --workspace=@yourstore/shared
    ```
 
-5. **Seed the database:**
+5. **Seed the database (development only):**
    ```bash
    npm run seed
    ```
-   *Creates `admin@yourstore.test` (password from `SEED_ADMIN_PASSWORD`) and `customer@yourstore.test` (password from `SEED_USER_PASSWORD`) alongside category catalog items.*
+   Creates `admin@yourstore.test` (password from `SEED_ADMIN_PASSWORD`) and `customer@yourstore.test` (password from `SEED_USER_PASSWORD`), plus 84 products across 9 categories.
+
+   > **Warning:** the seed wipes users and products. Never run it against a production database. Use the CSV import at `/admin/products/import` to add products instead.
 
 6. **Run development servers:**
    ```bash
    npm run dev
    ```
-   - Storefront & Admin UI: `http://localhost:3000`
-   - Express REST API: `http://localhost:4000`
+   - Storefront and Admin UI: `http://localhost:3000`
+   - Express API: `http://localhost:4000`
 
 7. **Run tests:**
    ```bash
-   # Unit and integration test suites
    npm test
-
-   # Playwright end-to-end tests
    npm run test:e2e
    ```
 
@@ -137,94 +138,84 @@ A production-ready, multi-category full-stack e-commerce platform built as a Typ
 
 ## Stripe Local Testing
 
-- **Test Card Number:** `4242 4242 4242 4242`
-- **Expiry:** Any future month/year (e.g. `12/34`)
-- **CVC:** Any 3 digits (e.g. `123`)
-- **Postal Code:** Any valid format (e.g. `400001` or `90210`)
+- **Test card:** `4242 4242 4242 4242`
+- **Expiry:** any future date (e.g. `12/34`)
+- **CVC:** any 3 digits
 
-To test asynchronous webhook fulfillment locally, forward Stripe events to the API endpoint:
+Forward webhook events to the local API:
 ```bash
 stripe listen --forward-to localhost:4000/api/v1/webhooks/stripe
 ```
-Copy the webhook signing secret displayed by the CLI (`whsec_...`) into `STRIPE_WEBHOOK_SECRET` in `apps/api/.env`.
+Copy the `whsec_...` secret it prints into `STRIPE_WEBHOOK_SECRET` in `apps/api/.env`.
 
 ---
 
 ## Deployment Guide
 
-Follow these numbered steps to deploy YourStore to production on free tiers:
+1. **MongoDB Atlas:**
+   - Create an M0 free cluster.
+   - Under **Database Access**, create a read/write user.
+   - Under **Network Access**, allow `0.0.0.0/0` (Render uses dynamic IPs).
+   - Copy the SRV connection string into `MONGO_URI`.
+   - Use a separate database name for production (for example `yourstore_prod`).
 
-1. **MongoDB Atlas (Database):**
-   - Create an M0 free tier cluster.
-   - Under **Database Access**, create a user with read/write permissions.
-   - Under **Network Access**, add `0.0.0.0/0` (allow access from anywhere, as Render uses dynamic IPs).
-   - Copy the SRV connection URI for `MONGO_URI`.
+2. **Cloudinary:**
+   - Create a free account and note the Cloud Name, API Key and API Secret.
 
-2. **Cloudinary (Media Storage):**
-   - Sign up for a free Cloudinary account.
-   - Note down `Cloud Name`, `API Key`, and `API Secret` from the dashboard.
+3. **Stripe:**
+   - Use Test mode and note the Secret Key.
+   - Add a webhook endpoint: `https://<render-url>/api/v1/webhooks/stripe`.
+   - Listen for `checkout.session.completed` and `checkout.session.expired`.
+   - Copy the signing secret (`whsec_...`).
 
-3. **Stripe (Payment Gateway):**
-   - Create a Stripe account in Test mode.
-   - Note down the `Publishable Key` and `Secret Key`.
-   - Add a Webhook Endpoint targeting `https://<your-render-api-url>/api/v1/webhooks/stripe`.
-   - Listen for events: `checkout.session.completed` and `checkout.session.expired`.
-   - Reveal and copy the webhook signing secret (`whsec_...`).
+4. **Resend:**
+   - Create an API key and set `EMAIL_FROM` to a verified sender.
 
-4. **Resend (Email Delivery):**
-   - Generate an API key in Resend.
-   - Configure a verified sender domain or use the sandbox sender address for `EMAIL_FROM`.
+5. **Render (API):**
+   - Create **one** Web Service from the repository, in a region close to your users and Atlas.
+   - **Build command:** `npm ci && npm run build --workspace=@yourstore/shared && npm run build --workspace=apps/api`
+   - **Start command:** `npm run start --workspace=apps/api`
+   - Set all API environment variables. Set `CLIENT_ORIGIN` to the exact Vercel URL.
 
-5. **Render (Backend API):**
-   - Create **ONE** Web Service connected to your repository.
-   - Select Node runtime and a region close to your target users and Atlas cluster.
-   - **Build Command:** `npm ci && npm run build --workspace=@yourstore/shared && npm run build --workspace=apps/api`
-   - **Start Command:** `npm run start --workspace=apps/api`
-   - Configure all environment variables listed under `apps/api/.env`. Set `CLIENT_ORIGIN` to the exact Vercel frontend URL (e.g. `https://yourstore.vercel.app`).
+6. **Vercel (web):**
+   - Import the repository with the root directory `apps/web`.
+   - Set `API_URL` (Render URL), `NEXT_PUBLIC_SITE_URL` (Vercel URL), `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` and `REVALIDATE_SECRET` (same as the API).
 
-6. **Vercel (Frontend App):**
-   - Import the repository into Vercel and configure the root directory to `apps/web`.
-   - Set environment variables:
-     - `API_URL`: The deployed Render API URL (e.g. `https://yourstore-api.onrender.com`).
-     - `NEXT_PUBLIC_SITE_URL`: Your Vercel domain (e.g. `https://yourstore.vercel.app`).
-     - `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`: Your Cloudinary cloud name.
-     - `REVALIDATE_SECRET`: The exact same secret key set on the Render API.
+7. **cron-job.org (keep-alive):**
+   - Create a job: `GET https://<render-url>/health` every 10 minutes, so the free Render instance stays awake.
 
-7. **cron-job.org (Keep-Alive Ping):**
-   - Configure a recurring HTTP cron monitor on [cron-job.org](https://cron-job.org) targeting `GET https://<your-render-api-url>/health` every 10 minutes to prevent Render free-tier instances from spinning down after inactivity.
-
-8. **Final Smoke Test Checklist:**
-   - [ ] Sign in with the seeded admin account.
-   - [ ] Browse product catalog and add an item to the cart.
-   - [ ] Complete a test checkout via Stripe with test card `4242...`.
-   - [ ] Verify the Stripe webhook fires and updates the order status to `Placed`.
-   - [ ] Confirm receipt of the order confirmation email in Resend logs.
-   - [ ] Access the `/admin` dashboard and verify orders, sales metrics, and product management.
+8. **Smoke test checklist:**
+   - [ ] `/health` returns `{"status":"ok","db":"up"}`.
+   - [ ] Sign in as the admin.
+   - [ ] Browse products and add one to the cart.
+   - [ ] Pay with the Stripe test card and confirm the order becomes `Placed`.
+   - [ ] Confirm the order email arrives.
+   - [ ] Open `/admin` and check orders, sales and product management.
 
 ---
 
 ## Known Limitations
 
-- **Guest Cart:** Guest cart items are maintained in browser memory and persist across navigation, but will reset upon a full page reload until the user logs in.
-- **Expired Stripe Sessions:** If a customer completes payment through Stripe after a checkout session has expired on the backend, a manual refund or status reconciliation must be performed.
-- **Playwright E2E Tests:** Run locally with the API on :4000 and web on :3000 already running (npm run test:e2e). They are not run in CI because they need a seeded database and running servers.
-- **Cancelling paid Stripe orders:** cancelling a paid Stripe order refunds it automatically through Stripe. If the refund call fails, the error is logged with the order id and needs a manual refund.
-- **PWA Icons:** Manifest icons in `apps/web` use placeholder assets.
-- **Audit Advisories:** `npm audit` reports minor advisories on `postcss` (bundled transitively in Next.js 15) and `zod` pending upstream package releases.
+- **Guest cart:** kept in browser memory only, so it resets on a full page reload until the user logs in.
+- **Expired Stripe sessions:** a payment completed after the session expired needs a manual refund or reconciliation.
+- **Cancelling paid Stripe orders:** refunded automatically through Stripe. If the refund call fails, the error is logged with the order id and needs a manual refund.
+- **Playwright E2E:** run locally with the API on :4000 and web on :3000 already running. The shop and admin tests are not yet passing (cart step and admin locators need fixing). They are not run in CI.
+- **Shared database:** development and production currently share one Atlas database. Use a separate database for production.
+- **Seed:** `npm run seed` wipes users and products. Never run it in production.
+- **PWA icons:** the manifest icons are placeholders.
+- **Audit advisories:** `npm audit` reports advisories on `postcss` (bundled in Next 15) and `zod`, pending major upgrades.
 
 ---
 
 ## Repository Scripts
 
-All commands can be executed from the repository root:
-
 | Script | Command | Description |
 | :--- | :--- | :--- |
-| `npm run dev` | `concurrently ...` | Runs both the Next.js web application and the Express API server concurrently |
-| `npm run build` | `npm run build --workspaces` | Compiles the shared package, Express backend, and Next.js frontend in sequence |
-| `npm run lint` | `eslint` | Lints all packages and applications with ESLint and Next.js rules |
-| `npm run typecheck` | `tsc --build` | Runs TypeScript project reference typechecking across all workspaces |
-| `npm test` | `vitest run` | Runs unit, controller, and integration test suites |
-| `npm run test:e2e` | `playwright test` | Runs the Playwright end-to-end browser tests |
-| `npm run seed` | `npm run seed --workspace=@yourstore/api` | Seeds the database with default admin, customer, categories, and products |
-| `npm run format` | `prettier --write ...` | Formats files across the repository using Prettier |
+| `npm run dev` | `concurrently ...` | Runs the web app and the API together |
+| `npm run build` | `npm run build --workspaces` | Builds shared, API and web in order |
+| `npm run lint` | `eslint` | Lints all packages |
+| `npm run typecheck` | `tsc --build` | Typechecks all workspaces |
+| `npm test` | `vitest run` | Runs unit and integration tests |
+| `npm run test:e2e` | `playwright test` | Runs Playwright end-to-end tests |
+| `npm run seed` | `npm run seed --workspace=@yourstore/api` | Seeds the dev database |
+| `npm run format` | `prettier --write ...` | Formats the repository |
