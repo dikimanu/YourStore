@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ResetPasswordInputSchema } from "@yourstore/shared";
 import { apiClient, ApiClientError } from "../../lib/api";
-import { useToast } from "../../components/Toast";
+import { useToast } from "@/components/Toast";
+import { PasswordInput } from "@/components/PasswordInput";
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -92,10 +93,10 @@ function ResetPasswordForm() {
         >
           New password
         </label>
-        <input
+        <PasswordInput
           id="password"
           name="password"
-          type="password"
+          label=""
           autoComplete="new-password"
           required
           value={password}
@@ -104,23 +105,10 @@ function ResetPasswordForm() {
             if (fieldErrors.password) setFieldErrors((prev) => ({ ...prev, password: undefined }));
           }}
           disabled={isSubmitting}
-          aria-describedby={fieldErrors.password ? "password-error" : undefined}
-          className={`w-full px-3.5 py-2 rounded-lg border text-sm transition focus:outline-none focus:ring-2 bg-transparent ${
-            fieldErrors.password
-              ? "border-red-500 focus:ring-red-500/20"
-              : "border-gray-300 dark:border-gray-700 focus:border-blue-500 focus:ring-blue-500/20"
-          }`}
+          error={fieldErrors.password}
+          helperText="Min 8 chars, including uppercase, lowercase, number, and special symbol."
           placeholder="New secure password"
         />
-        {fieldErrors.password ? (
-          <p id="password-error" className="mt-1 text-xs text-red-500">
-            {fieldErrors.password}
-          </p>
-        ) : (
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            Min 8 chars, including uppercase, lowercase, number, and special symbol.
-          </p>
-        )}
       </div>
 
       <div>
@@ -130,10 +118,10 @@ function ResetPasswordForm() {
         >
           Confirm new password
         </label>
-        <input
+        <PasswordInput
           id="confirmPassword"
           name="confirmPassword"
-          type="password"
+          label=""
           autoComplete="new-password"
           required
           value={confirmPassword}
@@ -142,19 +130,9 @@ function ResetPasswordForm() {
             if (fieldErrors.confirmPassword) setFieldErrors((prev) => ({ ...prev, confirmPassword: undefined }));
           }}
           disabled={isSubmitting}
-          aria-describedby={fieldErrors.confirmPassword ? "confirm-error" : undefined}
-          className={`w-full px-3.5 py-2 rounded-lg border text-sm transition focus:outline-none focus:ring-2 bg-transparent ${
-            fieldErrors.confirmPassword
-              ? "border-red-500 focus:ring-red-500/20"
-              : "border-gray-300 dark:border-gray-700 focus:border-blue-500 focus:ring-blue-500/20"
-          }`}
+          error={fieldErrors.confirmPassword}
           placeholder="Re-enter new password"
         />
-        {fieldErrors.confirmPassword && (
-          <p id="confirm-error" className="mt-1 text-xs text-red-500">
-            {fieldErrors.confirmPassword}
-          </p>
-        )}
       </div>
 
       <button

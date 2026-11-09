@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import { LoginInputSchema, LoginInput } from "@yourstore/shared";
 import { apiClient, ApiClientError } from "../../lib/api";
 import { useToast } from "../../components/Toast";
-import { useCart } from "../../lib/CartContext";
+import { useCart } from "@/lib/CartContext";
+import { PasswordInput } from "@/components/PasswordInput";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -104,7 +105,7 @@ export default function LoginPage() {
                   ? "border-red-500 focus:ring-red-500/20"
                   : "border-gray-300 dark:border-gray-700 focus:border-blue-500 focus:ring-blue-500/20"
               }`}
-              placeholder="you@example.com"
+              placeholder="••••••••"
             />
             {fieldErrors.email && (
               <p id="email-error" className="mt-1 text-xs text-red-500">
@@ -128,28 +129,18 @@ export default function LoginPage() {
                 Forgot password?
               </Link>
             </div>
-            <input
+            <PasswordInput
               id="password"
               name="password"
-              type="password"
+              label=""
               autoComplete="current-password"
               required
               value={formData.password}
               onChange={handleChange}
               disabled={isSubmitting}
-              aria-describedby={fieldErrors.password ? "password-error" : undefined}
-              className={`w-full px-3.5 py-2 rounded-lg border text-sm transition focus:outline-none focus:ring-2 bg-transparent ${
-                fieldErrors.password
-                  ? "border-red-500 focus:ring-red-500/20"
-                  : "border-gray-300 dark:border-gray-700 focus:border-blue-500 focus:ring-blue-500/20"
-              }`}
+              error={fieldErrors.password}
               placeholder="••••••••"
             />
-            {fieldErrors.password && (
-              <p id="password-error" className="mt-1 text-xs text-red-500">
-                {fieldErrors.password}
-              </p>
-            )}
           </div>
 
           <button

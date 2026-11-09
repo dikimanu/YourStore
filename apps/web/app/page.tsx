@@ -3,13 +3,14 @@ import Link from "next/link";
 import { ProductCard } from "@/components/ProductCard";
 import { fetchProducts } from "@/lib/serverApi";
 import type { Product } from "@yourstore/shared";
+import { HeroCarousel } from "@/components/HeroCarousel";
 
 export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: "Home — YourStore",
   description:
-    "Shop gadgets, clothing, electronics, vehicles and home products at YourStore.",
+    "Shop gadgets, clothing, electronics, vehicles, home, foods, books, health and industrial products at YourStore.",
 };
 
 const CATEGORY_META: Record<
@@ -21,6 +22,10 @@ const CATEGORY_META: Record<
   electronics: { label: "Electronics", emoji: "💻", color: "from-blue-600 to-cyan-500" },
   vehicles: { label: "Vehicles", emoji: "🚗", color: "from-green-600 to-teal-500" },
   home: { label: "Home", emoji: "🏠", color: "from-orange-500 to-amber-500" },
+  foods: { label: "Foods & Grocery", emoji: "🍎", color: "from-emerald-500 to-lime-600" },
+  books: { label: "Books", emoji: "📚", color: "from-amber-600 to-yellow-600" },
+  health: { label: "Health & Wellness", emoji: "🩺", color: "from-teal-500 to-cyan-600" },
+  industrial: { label: "Lab & Industrial Supplies", emoji: "⚙️", color: "from-slate-600 to-zinc-700" },
 };
 
 export default async function HomePage() {
@@ -34,40 +39,11 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-16">
-      {/* Hero */}
-      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-700 via-indigo-700 to-purple-800 px-6 py-16 sm:px-12 sm:py-24 text-white text-center">
-        <div className="relative z-10 max-w-2xl mx-auto space-y-6">
-          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight">
-            Everything you need,{" "}
-            <span className="text-yellow-300">delivered fast.</span>
-          </h1>
-          <p className="text-lg text-blue-100 max-w-xl mx-auto">
-            Explore 60+ products across gadgets, clothing, electronics, vehicles
-            and home — curated for quality, priced for India.
-          </p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <Link
-              href="/products"
-              className="rounded-lg bg-white text-blue-700 font-semibold px-6 py-3 hover:bg-blue-50 transition"
-            >
-              Shop All
-            </Link>
-            <Link
-              href="/category/electronics"
-              className="rounded-lg border border-white/40 text-white font-semibold px-6 py-3 hover:bg-white/10 transition"
-            >
-              Browse Electronics
-            </Link>
-          </div>
-        </div>
-        {/* Decorative blobs */}
-        <div className="absolute -top-10 -left-10 w-72 h-72 bg-white/5 rounded-full blur-3xl" />
-        <div className="absolute -bottom-10 -right-10 w-96 h-96 bg-white/5 rounded-full blur-3xl" />
-      </section>
+      <HeroCarousel />
 
       {/* Categories grid */}
       <section>
-        <h2 className="text-2xl font-bold mb-6">Shop by Category</h2>
+        <h2 className="text-2xl font-bold mb-6 section-heading">Shop by Category</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
           {Object.entries(CATEGORY_META).map(([slug, meta]) => (
             <Link
@@ -88,7 +64,7 @@ export default async function HomePage() {
       {featured.length > 0 && (
         <section>
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold">New Arrivals</h2>
+            <h2 className="text-2xl font-bold section-heading">New Arrivals</h2>
             <Link
               href="/products"
               className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
@@ -96,7 +72,7 @@ export default async function HomePage() {
               See all →
             </Link>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 min-[480px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {featured.map((p) => (
               <ProductCard key={p.slug} product={p} />
             ))}

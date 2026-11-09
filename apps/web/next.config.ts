@@ -14,6 +14,11 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "placehold.co",
       },
+      {
+        // Unsplash images used by HeroCarousel
+        protocol: "https",
+        hostname: "images.unsplash.com",
+      },
     ],
     // Disable Next.js built-in optimizer for Cloudinary images;
     // we do our own transformation in the custom loader.

@@ -43,7 +43,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">
+        <h1 className="text-2xl font-bold section-heading">
           {search ? `Results for "${search}"` : "All Products"}
         </h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -84,7 +84,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
           <p className="text-sm mt-1">Try adjusting the search or clearing filters.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 min-[480px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {products.map((p) => (
             <ProductCard key={p.slug} product={p} />
           ))}

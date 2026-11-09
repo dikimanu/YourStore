@@ -1,5 +1,15 @@
 // Categories
-export const CATEGORIES = ["gadgets", "clothing", "electronics", "vehicles", "home"] as const;
+export const CATEGORIES = [
+  "gadgets",
+  "clothing",
+  "electronics",
+  "vehicles",
+  "home",
+  "foods",
+  "books",
+  "health",
+  "industrial",
+] as const;
 export type Category = (typeof CATEGORIES)[number];
 
 // Order statuses

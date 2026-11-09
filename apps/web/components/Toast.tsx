@@ -51,7 +51,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           <div
             key={toast.id}
             role="status"
-            className={`pointer-events-auto flex items-center justify-between p-4 rounded-lg shadow-lg text-sm border font-medium transition-all transform duration-200 ${
+            className={`pointer-events-auto flex items-center justify-between p-4 rounded-xl shadow-lg text-sm border font-medium toast-enter ${
               toast.type === "success"
                 ? "bg-green-50 border-green-200 text-green-900 dark:bg-green-950/80 dark:border-green-800 dark:text-green-200"
                 : toast.type === "error"
@@ -63,7 +63,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             <button
               type="button"
               onClick={() => removeToast(toast.id)}
-              className="ml-3 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white font-bold p-1"
+              className="ml-3 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white font-bold p-1 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               aria-label="Close notification"
             >
               &times;

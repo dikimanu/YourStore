@@ -232,7 +232,7 @@ export default function AdminProductImportPage() {
           <code className="font-mono">title</code>,{" "}
           <code className="font-mono">description</code>,{" "}
           <code className="font-mono">category</code> (gadgets | clothing | electronics | vehicles |
-          home), <code className="font-mono">brand</code>,{" "}
+          home | foods | books | health | industrial), <code className="font-mono">brand</code>,{" "}
           <code className="font-mono">basePrice</code>
         </p>
         <p className="text-blue-700 dark:text-blue-300">

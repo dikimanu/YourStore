@@ -42,6 +42,35 @@ export const GadgetsAttributesSchema = z.object({
   warranty: z.string().optional(),
 });
 
+export const FoodsAttributesSchema = z.object({
+  weight: z.string().optional(),
+  expiryInfo: z.string().optional(),
+  vegNonVeg: z.enum(["veg", "non-veg"]).optional(),
+  brandOrigin: z.string().optional(),
+});
+
+export const BooksAttributesSchema = z.object({
+  author: z.string().optional(),
+  publisher: z.string().optional(),
+  language: z.string().optional(),
+  pages: z.number().int().optional(),
+  isbn: z.string().optional(),
+});
+
+export const HealthAttributesSchema = z.object({
+  packSize: z.string().optional(),
+  ingredients: z.string().optional(),
+  usage: z.string().optional(),
+  expiryInfo: z.string().optional(),
+});
+
+export const IndustrialAttributesSchema = z.object({
+  material: z.string().optional(),
+  capacity: z.string().optional(),
+  grade: z.string().optional(),
+  safetyNote: z.string().optional(),
+});
+
 // ---- Category attribute schemas map ----
 export const CategoryAttributesSchemas = {
   electronics: ElectronicsAttributesSchema,
@@ -49,6 +78,10 @@ export const CategoryAttributesSchemas = {
   vehicles: VehiclesAttributesSchema,
   home: HomeAttributesSchema,
   gadgets: GadgetsAttributesSchema,
+  foods: FoodsAttributesSchema,
+  books: BooksAttributesSchema,
+  health: HealthAttributesSchema,
+  industrial: IndustrialAttributesSchema,
 } as const;
 
 export type CategoryAttributes = {
@@ -57,6 +90,10 @@ export type CategoryAttributes = {
   vehicles: z.infer<typeof VehiclesAttributesSchema>;
   home: z.infer<typeof HomeAttributesSchema>;
   gadgets: z.infer<typeof GadgetsAttributesSchema>;
+  foods: z.infer<typeof FoodsAttributesSchema>;
+  books: z.infer<typeof BooksAttributesSchema>;
+  health: z.infer<typeof HealthAttributesSchema>;
+  industrial: z.infer<typeof IndustrialAttributesSchema>;
 };
 
 // ---- Variant ----

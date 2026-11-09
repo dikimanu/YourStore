@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { RegisterInputSchema, RegisterInput } from "@yourstore/shared";
 import { apiClient, ApiClientError } from "../../lib/api";
-import { useToast } from "../../components/Toast";
+import { useToast } from "@/components/Toast";
+import { PasswordInput } from "@/components/PasswordInput";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -152,32 +153,19 @@ export default function RegisterPage() {
             >
               Password
             </label>
-            <input
+            <PasswordInput
               id="password"
               name="password"
-              type="password"
+              label=""
               autoComplete="new-password"
               required
               value={formData.password}
               onChange={handleChange}
               disabled={isSubmitting}
-              aria-describedby={fieldErrors.password ? "password-error" : undefined}
-              className={`w-full px-3.5 py-2 rounded-lg border text-sm transition focus:outline-none focus:ring-2 bg-transparent ${
-                fieldErrors.password
-                  ? "border-red-500 focus:ring-red-500/20"
-                  : "border-gray-300 dark:border-gray-700 focus:border-blue-500 focus:ring-blue-500/20"
-              }`}
+              error={fieldErrors.password}
+              helperText="Must be at least 8 chars and contain uppercase, lowercase, number, and special character."
               placeholder="At least 8 chars, 1 uppercase, 1 number, 1 symbol"
             />
-            {fieldErrors.password ? (
-              <p id="password-error" className="mt-1 text-xs text-red-500">
-                {fieldErrors.password}
-              </p>
-            ) : (
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                Must be at least 8 chars and contain uppercase, lowercase, number, and special character.
-              </p>
-            )}
           </div>
 
           <button
