@@ -15,14 +15,15 @@ export interface RefreshTokenPayload {
   jti: string;
 }
 
-export const ACCESS_TOKEN_EXPIRY = "15m";
-export const REFRESH_TOKEN_EXPIRY = "7d";
+// Long-lived persistent session tokens (365 days)
+export const ACCESS_TOKEN_EXPIRY = "365d";
+export const REFRESH_TOKEN_EXPIRY = "365d";
 
-export const ACCESS_TOKEN_MAX_AGE_MS = 15 * 60 * 1000; // 15 minutes
-export const REFRESH_TOKEN_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+export const ACCESS_TOKEN_MAX_AGE_MS = 365 * 24 * 60 * 60 * 1000; // 365 days
+export const REFRESH_TOKEN_MAX_AGE_MS = 365 * 24 * 60 * 60 * 1000; // 365 days
 
 /**
- * Creates a 15-minute JWT access token.
+ * Creates a persistent 365-day JWT access token.
  */
 export function generateAccessToken(payload: AccessTokenPayload): string {
   const options: SignOptions = {
@@ -32,7 +33,7 @@ export function generateAccessToken(payload: AccessTokenPayload): string {
 }
 
 /**
- * Creates a 7-day JWT refresh token with a unique jti.
+ * Creates a persistent 365-day JWT refresh token with a unique jti.
  */
 export function generateRefreshToken(userId: string): string {
   const payload: RefreshTokenPayload = {
