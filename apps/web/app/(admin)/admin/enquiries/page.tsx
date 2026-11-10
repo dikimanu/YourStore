@@ -196,10 +196,10 @@ export default function AdminEnquiriesPage() {
                   <th className="px-6 py-3.5 font-semibold">Phone</th>
                   <th className="px-6 py-3.5 font-semibold">Target Product</th>
                   <th className="px-6 py-3.5 font-semibold">Type</th>
-                  <th className="px-6 py-3.5 font-semibold">Status</th>
                   <th className="px-6 py-3.5 font-semibold">Preferred Date / Note</th>
                   <th className="px-6 py-3.5 font-semibold text-right">Received</th>
-                  <th className="px-6 py-3.5 font-semibold text-center">Action</th>
+                  <th className="px-6 py-3.5 font-semibold text-center">STATUS</th>
+                  <th className="px-6 py-3.5 font-semibold text-center">ACTIONS</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -242,19 +242,6 @@ export default function AdminEnquiriesPage() {
                           {e.type === "visit" ? "Showroom Visit" : "General Inquiry"}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize ${
-                            status === "resolved"
-                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300"
-                              : status === "replied"
-                                ? "bg-teal-100 text-teal-800 dark:bg-teal-950/80 dark:text-teal-300"
-                                : "bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300"
-                          }`}
-                        >
-                          {status}
-                        </span>
-                      </td>
                       <td className="px-6 py-4 text-xs text-gray-600 dark:text-gray-300 max-w-xs">
                         {e.preferredDate && (
                           <span className="block font-medium text-amber-600 dark:text-amber-400 mb-0.5">
@@ -272,10 +259,23 @@ export default function AdminEnquiriesPage() {
                         {new Date(e.createdAt).toLocaleDateString("en-IN")}
                       </td>
                       <td className="px-6 py-4 text-center">
+                        <span
+                          className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize ${
+                            status === "resolved"
+                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300"
+                              : status === "replied"
+                                ? "bg-teal-100 text-teal-800 dark:bg-teal-950/80 dark:text-teal-300"
+                                : "bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300"
+                          }`}
+                        >
+                          {status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-center">
                         <button
                           type="button"
                           onClick={() => handleOpenReplyModal(e)}
-                          className="px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900 transition shadow-xs"
+                          className="px-3.5 py-1.5 rounded-lg text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white transition shadow-xs"
                         >
                           {e.adminReply ? "View / Edit Reply" : "Reply"}
                         </button>
