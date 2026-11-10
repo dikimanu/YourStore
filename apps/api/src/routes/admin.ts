@@ -11,7 +11,6 @@ import {
   AdminReturnDecisionSchema,
   AdminOrdersQuerySchema,
   AdminCustomersQuerySchema,
-  AdminEnquiriesQuerySchema,
   AdminAuditLogsQuerySchema,
   CsvImportRequestSchema,
 } from "@yourstore/shared";
@@ -43,7 +42,6 @@ import { AdminStatsQuerySchema } from "@yourstore/shared";
 import { getAdminStats } from "../controllers/adminStats.js";
 import {
   adminGetCustomers,
-  adminGetEnquiries,
   adminGetAuditLogs,
 } from "../controllers/adminLists.js";
 import {
@@ -80,10 +78,8 @@ router.delete("/products/:id", asyncHandler(adminDeleteProduct));
 // Order management
 router.get("/orders", validateQuery(AdminOrdersQuerySchema), asyncHandler(adminGetOrders));
 
-// Customers, Enquiries, Audit Logs management
+// Customers, Audit Logs management
 router.get("/customers", validateQuery(AdminCustomersQuerySchema), asyncHandler(adminGetCustomers));
-router.get("/enquiries", validateQuery(AdminEnquiriesQuerySchema), asyncHandler(adminGetEnquiries));
-router.post("/enquiries/:id/reply", validateBody(AdminEnquiryReplySchema), asyncHandler(adminReplyEnquiry));
 router.get("/audit-logs", validateQuery(AdminAuditLogsQuerySchema), asyncHandler(adminGetAuditLogs));
 router.patch(
   "/orders/:id/status",
@@ -100,11 +96,4 @@ router.patch(
 );
 router.patch("/orders/:id/refund", asyncHandler(adminRefundOrder));
 
-// Coupon management
-router.get("/coupons", validateQuery(AdminCouponQuerySchema), asyncHandler(adminListCoupons));
-router.post("/coupons", validateBody(CreateCouponInputSchema), asyncHandler(adminCreateCoupon));
-router.patch("/coupons/:id", validateBody(UpdateCouponInputSchema), asyncHandler(adminUpdateCoupon));
-router.delete("/coupons/:id", asyncHandler(adminDeleteCoupon));
-
 export default router;
-

@@ -131,12 +131,6 @@ export default function AdminLayout({ children }: AdminRoleGuardProps) {
             Customers
           </Link>
           <Link
-            href="/admin/enquiries"
-            className="px-3 py-1.5 rounded-md bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
-          >
-            Enquiries
-          </Link>
-          <Link
             href="/admin/audit-log"
             className="px-3 py-1.5 rounded-md bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
           >

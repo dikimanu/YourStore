@@ -209,7 +209,7 @@ export function ProductForm({ initialProduct, isEdit = false }: ProductFormProps
             >
               {LISTING_TYPES.map((lt) => (
                 <option key={lt} value={lt}>
-                  {lt === "purchasable" ? "Purchasable (Cart & Checkout)" : "Enquiry Only (Vehicles)"}
+                  {lt === "purchasable" ? "Purchasable (Cart & Checkout)" : "Enquiry Only"}
                 </option>
               ))}
             </select>

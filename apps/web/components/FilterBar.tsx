@@ -13,7 +13,7 @@ interface FilterBarProps {
   showCategory?: boolean;
 }
 
-const CATEGORIES = ["gadgets", "clothing", "electronics", "vehicles", "home", "foods", "books", "health", "industrial"] as const;
+const CATEGORIES = ["gadgets", "clothing", "electronics", "home", "foods", "books", "health", "industrial"] as const;
 
 const SORT_OPTIONS = [
   { label: "Newest", value: "newest" },

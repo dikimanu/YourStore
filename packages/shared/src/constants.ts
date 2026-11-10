@@ -1,9 +1,8 @@
-// Categories
+// Categories (vehicles category purged)
 export const CATEGORIES = [
   "gadgets",
   "clothing",
   "electronics",
-  "vehicles",
   "home",
   "foods",
   "books",

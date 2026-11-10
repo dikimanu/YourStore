@@ -23,7 +23,6 @@ export default function PrivacyPage() {
             <li>Personal details: Name, email address, phone number.</li>
             <li>Shipping information: Delivery addresses, postal codes.</li>
             <li>Transactional data: Order history and payment status records (card numbers are processed securely by Stripe and never stored on our servers).</li>
-            <li>Vehicle enquiries and dealership visit requests submitted via our platform.</li>
           </ul>
         </section>
 

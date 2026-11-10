@@ -54,25 +54,3 @@ export const authLimiter = rateLimit({
     res.status(429).json(response);
   },
 });
-
-/**
- * Strict rate limiter for vehicle enquiries and dealership visit bookings.
- * Allows 5 submissions per hour per IP.
- */
-export const enquiryLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  limit: 5,
-  standardHeaders: "draft-7",
-  legacyHeaders: false,
-  skip: (req: Request) =>
-    process.env["NODE_ENV"] === "test" && !req.headers["x-test-rate-limit"],
-  handler: (_req: Request, res: Response) => {
-    const response: ApiErrorResponse = {
-      error: {
-        code: "RATE_LIMIT_EXCEEDED",
-        message: "Too many enquiries submitted from this IP. Please try again after an hour.",
-      },
-    };
-    res.status(429).json(response);
-  },
-});

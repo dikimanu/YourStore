@@ -13,12 +13,10 @@ import mongoose, { Types } from "mongoose";
 import { User } from "../models/User.js";
 import { Order } from "../models/Order.js";
 import { Product } from "../models/Product.js";
-import { Enquiry } from "../models/Enquiry.js";
 import { AuditLog } from "../models/AuditLog.js";
 import { generateAccessToken } from "../lib/token.js";
 import {
   AdminCustomersResponse,
-  AdminEnquiriesResponse,
   AdminAuditLogsResponse,
   AdminOrdersResponse,
 } from "@yourstore/shared";
@@ -63,7 +61,6 @@ describe("Admin Lists API (Customers, Enquiries, AuditLogs, Orders)", () => {
       User.deleteMany({}),
       Order.deleteMany({}),
       Product.deleteMany({}),
-      Enquiry.deleteMany({}),
       AuditLog.deleteMany({}),
     ]);
   });
@@ -97,9 +94,6 @@ describe("Admin Lists API (Customers, Enquiries, AuditLogs, Orders)", () => {
     const res1 = await request(app).get("/api/v1/admin/customers");
     expect(res1.status).toBe(401);
 
-    const res2 = await request(app).get("/api/v1/admin/enquiries");
-    expect(res2.status).toBe(401);
-
     const res3 = await request(app).get("/api/v1/admin/audit-logs");
     expect(res3.status).toBe(401);
   });
@@ -110,9 +104,6 @@ describe("Admin Lists API (Customers, Enquiries, AuditLogs, Orders)", () => {
 
     const res1 = await request(app).get("/api/v1/admin/customers").set(headers);
     expect(res1.status).toBe(403);
-
-    const res2 = await request(app).get("/api/v1/admin/enquiries").set(headers);
-    expect(res2.status).toBe(403);
 
     const res3 = await request(app).get("/api/v1/admin/audit-logs").set(headers);
     expect(res3.status).toBe(403);
@@ -126,10 +117,6 @@ describe("Admin Lists API (Customers, Enquiries, AuditLogs, Orders)", () => {
     const res1 = await request(app).get("/api/v1/admin/customers?limit=150").set(headers);
     expect(res1.status).toBe(400);
 
-    // invalid enquiry type
-    const res2 = await request(app).get("/api/v1/admin/enquiries?type=invalid").set(headers);
-    expect(res2.status).toBe(400);
-
     // invalid order paymentMethod
     const res3 = await request(app).get("/api/v1/admin/orders?paymentMethod=paypal").set(headers);
     expect(res3.status).toBe(400);
@@ -142,9 +129,6 @@ describe("Admin Lists API (Customers, Enquiries, AuditLogs, Orders)", () => {
     const specialQuery = ".*+?^${}()|[]\\";
     const res1 = await request(app).get(`/api/v1/admin/customers?search=${encodeURIComponent(specialQuery)}`).set(headers);
     expect(res1.status).toBe(200);
-
-    const res2 = await request(app).get(`/api/v1/admin/enquiries?search=${encodeURIComponent(specialQuery)}`).set(headers);
-    expect(res2.status).toBe(200);
 
     const res3 = await request(app).get(`/api/v1/admin/orders?search=${encodeURIComponent(specialQuery)}`).set(headers);
     expect(res3.status).toBe(200);
@@ -232,52 +216,6 @@ describe("Admin Lists API (Customers, Enquiries, AuditLogs, Orders)", () => {
     expect(target).toBeDefined();
     expect(target?.orderCount).toBe(2);
     expect(target?.totalSpent).toBe(2000);
-  });
-
-  // 3. Enquiries filter by type
-  it("enquiries filter by type", async () => {
-    await createUsers();
-    const headers = { Cookie: `accessToken=${adminToken}` };
-
-    const prod = await Product.create({
-      title: "Luxury Sedan",
-      slug: "luxury-sedan",
-      description: "Fast car",
-      category: "vehicles",
-      brand: "AutoBrand",
-      basePrice: 2500000,
-      listingType: "enquiry",
-    });
-
-    await Enquiry.create({
-      product: prod._id,
-      name: "Enquiry Person",
-      phone: "1111111111",
-      message: "More info please",
-      type: "enquiry",
-    });
-
-    await Enquiry.create({
-      product: prod._id,
-      name: "Visit Person",
-      phone: "2222222222",
-      message: "Schedule test drive",
-      type: "visit",
-      preferredDate: new Date(),
-    });
-
-    const resEnquiry = await request(app).get("/api/v1/admin/enquiries?type=enquiry").set(headers);
-    expect(resEnquiry.status).toBe(200);
-    const bodyEnquiry = resEnquiry.body as AdminEnquiriesResponse;
-    expect(bodyEnquiry.enquiries.length).toBe(1);
-    expect(bodyEnquiry.enquiries[0]?.type).toBe("enquiry");
-    expect(bodyEnquiry.enquiries[0]?.product.slug).toBe("luxury-sedan");
-
-    const resVisit = await request(app).get("/api/v1/admin/enquiries?type=visit").set(headers);
-    expect(resVisit.status).toBe(200);
-    const bodyVisit = resVisit.body as AdminEnquiriesResponse;
-    expect(bodyVisit.enquiries.length).toBe(1);
-    expect(bodyVisit.enquiries[0]?.type).toBe("visit");
   });
 
   // 4. AuditLog filter by action

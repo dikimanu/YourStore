@@ -22,14 +22,6 @@ export const ClothingAttributesSchema = z.object({
   material: z.string().optional(),
 });
 
-export const VehiclesAttributesSchema = z.object({
-  modelYear: z.number().int().optional(),
-  mileage: z.string().optional(),
-  fuelType: z.enum(["petrol", "diesel", "electric", "hybrid", "cng"]).optional(),
-  transmission: z.enum(["manual", "automatic"]).optional(),
-  condition: z.enum(["new", "used"]).optional(),
-});
-
 export const HomeAttributesSchema = z.object({
   dimensions: z.string().optional(),
   weight: z.string().optional(),
@@ -75,7 +67,6 @@ export const IndustrialAttributesSchema = z.object({
 export const CategoryAttributesSchemas = {
   electronics: ElectronicsAttributesSchema,
   clothing: ClothingAttributesSchema,
-  vehicles: VehiclesAttributesSchema,
   home: HomeAttributesSchema,
   gadgets: GadgetsAttributesSchema,
   foods: FoodsAttributesSchema,
@@ -87,7 +78,6 @@ export const CategoryAttributesSchemas = {
 export type CategoryAttributes = {
   electronics: z.infer<typeof ElectronicsAttributesSchema>;
   clothing: z.infer<typeof ClothingAttributesSchema>;
-  vehicles: z.infer<typeof VehiclesAttributesSchema>;
   home: z.infer<typeof HomeAttributesSchema>;
   gadgets: z.infer<typeof GadgetsAttributesSchema>;
   foods: z.infer<typeof FoodsAttributesSchema>;
@@ -598,37 +588,6 @@ export const WishlistInputSchema = z.object({
 });
 export type WishlistInput = z.infer<typeof WishlistInputSchema>;
 
-export const EnquiryTypeSchema = z.enum(["enquiry", "visit"]);
-export type EnquiryType = z.infer<typeof EnquiryTypeSchema>;
-
-export const CreateEnquiryInputSchema = z
-  .object({
-    productId: z.string().trim().min(1, "Product ID is required"),
-    name: z.string().trim().min(2, "Name must be at least 2 characters").max(100, "Name cannot exceed 100 characters"),
-    phone: IndianPhoneSchema,
-    message: z.string().trim().max(1000, "Message cannot exceed 1000 characters").optional().default(""),
-    type: EnquiryTypeSchema.default("enquiry"),
-    preferredDate: z.coerce.date().optional(),
-  })
-  .superRefine((data, ctx) => {
-    if (data.type === "visit") {
-      if (!data.preferredDate) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["preferredDate"],
-          message: "Preferred date is required for dealership visits",
-        });
-      } else if (data.preferredDate.getTime() <= Date.now()) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["preferredDate"],
-          message: "Preferred date must be in the future",
-        });
-      }
-    }
-  });
-export type CreateEnquiryInput = z.infer<typeof CreateEnquiryInputSchema>;
-
 export const EmailSchema = z
   .string()
   .trim()
@@ -796,41 +755,6 @@ export const AdminCustomersResponseSchema = z.object({
   totalPages: z.number().int().nonnegative(),
 });
 export type AdminCustomersResponse = z.infer<typeof AdminCustomersResponseSchema>;
-
-export const AdminEnquiriesQuerySchema = z.object({
-  type: z.enum(["enquiry", "visit"]).optional(),
-  search: z.string().trim().optional(),
-  page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(20),
-});
-export type AdminEnquiriesQuery = z.infer<typeof AdminEnquiriesQuerySchema>;
-
-export const AdminEnquiryItemSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  phone: z.string(),
-  message: z.string(),
-  type: z.enum(["enquiry", "visit"]),
-  preferredDate: z.coerce.date().optional(),
-  product: z.object({
-    _id: z.string().optional(),
-    id: z.string().optional(),
-    title: z.string(),
-    slug: z.string(),
-  }),
-  user: z.string().optional(),
-  createdAt: z.coerce.date(),
-  updatedAt: z.coerce.date().optional(),
-});
-export type AdminEnquiryItem = z.infer<typeof AdminEnquiryItemSchema>;
-
-export const AdminEnquiriesResponseSchema = z.object({
-  enquiries: z.array(AdminEnquiryItemSchema),
-  total: z.number().int().nonnegative(),
-  page: z.number().int().min(1),
-  totalPages: z.number().int().nonnegative(),
-});
-export type AdminEnquiriesResponse = z.infer<typeof AdminEnquiriesResponseSchema>;
 
 export const AdminAuditLogsQuerySchema = z.object({
   action: z.string().trim().optional(),

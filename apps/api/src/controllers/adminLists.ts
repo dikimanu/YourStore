@@ -2,13 +2,11 @@ import { Request, Response } from "express";
 import { FilterQuery, Types } from "mongoose";
 import {
   AdminCustomersResponse,
-  AdminEnquiriesResponse,
   AdminAuditLogsResponse,
   OrderStatus,
 } from "@yourstore/shared";
 import { User, IUser } from "../models/User.js";
 import { Order } from "../models/Order.js";
-import { Enquiry } from "../models/Enquiry.js";
 import { AuditLog } from "../models/AuditLog.js";
 import { escapeRegex } from "../lib/regex.js";
 
@@ -114,83 +112,6 @@ export async function adminGetCustomers(req: Request, res: Response): Promise<vo
 
   const response: AdminCustomersResponse = {
     customers,
-    total,
-    page,
-    totalPages,
-  };
-
-  res.status(200).json(response);
-}
-
-/**
- * GET /api/v1/admin/enquiries
- * Query: type (enquiry|visit), search (name or phone), page, limit.
- * Populate product title and slug only. Newest first.
- */
-export async function adminGetEnquiries(req: Request, res: Response): Promise<void> {
-  const page = Math.max(1, parseInt(typeof req.query["page"] === "string" ? req.query["page"] : "1", 10) || 1);
-  const rawLimit = parseInt(typeof req.query["limit"] === "string" ? req.query["limit"] : "20", 10) || 20;
-  const limit = Math.max(1, Math.min(100, rawLimit));
-
-  const filter: Record<string, unknown> = {};
-
-  const type = typeof req.query["type"] === "string" ? req.query["type"].trim() : undefined;
-  if (type === "enquiry" || type === "visit") {
-    filter["type"] = type;
-  }
-
-  const search = typeof req.query["search"] === "string" ? req.query["search"].trim() : undefined;
-  if (search) {
-    const escaped = escapeRegex(search);
-    const searchRegex = new RegExp(escaped, "i");
-    filter["$or"] = [
-      { name: { $regex: searchRegex } },
-      { phone: { $regex: searchRegex } },
-    ];
-  }
-
-  const [total, rawEnquiries] = await Promise.all([
-    Enquiry.countDocuments(filter),
-    Enquiry.find(filter)
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .populate("product", "title slug")
-      .lean<{
-        _id: Types.ObjectId;
-        name: string;
-        phone: string;
-        message: string;
-        type: "enquiry" | "visit";
-        preferredDate?: Date;
-        product?: { _id: Types.ObjectId; title: string; slug: string } | null;
-        user?: Types.ObjectId;
-        createdAt: Date;
-        updatedAt?: Date;
-      }[]>(),
-  ]);
-
-  const totalPages = Math.ceil(total / limit);
-
-  const enquiries = rawEnquiries.map((e) => ({
-    id: e._id.toString(),
-    name: e.name,
-    phone: e.phone,
-    message: e.message || "",
-    type: e.type,
-    preferredDate: e.preferredDate,
-    product: {
-      id: e.product?._id ? e.product._id.toString() : "",
-      title: e.product?.title || "Unknown Product",
-      slug: e.product?.slug || "",
-    },
-    user: e.user ? e.user.toString() : undefined,
-    createdAt: e.createdAt,
-    updatedAt: e.updatedAt,
-  }));
-
-  const response: AdminEnquiriesResponse = {
-    enquiries,
     total,
     page,
     totalPages,

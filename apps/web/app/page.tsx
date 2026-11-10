@@ -10,7 +10,7 @@ export const revalidate = 60;
 export const metadata: Metadata = {
   title: "Home — YourStore",
   description:
-    "Shop gadgets, clothing, electronics, vehicles, home, foods, books, health and industrial products at YourStore.",
+    "Shop gadgets, clothing, electronics, home, foods, books, health and industrial products at YourStore.",
 };
 
 const CATEGORY_META: Record<

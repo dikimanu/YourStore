@@ -4,17 +4,14 @@ import React, { useState } from "react";
 import { AddToCartButton } from "@/components/AddToCartButton";
 import { VariantSelector } from "@/components/VariantSelector";
 import { WishlistButton } from "@/components/WishlistButton";
-import { VehicleEnquiryForm } from "@/components/VehicleEnquiryForm";
 import type { Product, Variant } from "@yourstore/shared";
 
 interface ProductInteractiveSectionProps {
   product: Product & { id: string };
-  isEnquiry: boolean;
 }
 
 export function ProductInteractiveSection({
   product,
-  isEnquiry,
 }: ProductInteractiveSectionProps) {
   const hasVariants = product.variants && product.variants.length > 0;
   const [selectedSku, setSelectedSku] = useState<string>(
@@ -48,11 +45,7 @@ export function ProductInteractiveSection({
           <span className="text-3xl font-extrabold text-gray-900 dark:text-gray-100">
             ₹{displayPrice.toLocaleString("en-IN")}
           </span>
-          {isEnquiry ? (
-            <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-              Enquiry Only
-            </span>
-          ) : isAvailable ? (
+          {isAvailable ? (
             <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300">
               In Stock {currentStock !== undefined ? `(${currentStock})` : ""}
             </span>
@@ -76,40 +69,31 @@ export function ProductInteractiveSection({
         />
       )}
 
-      {/* Main Desktop Add to Cart / Enquire */}
+      {/* Main Desktop Add to Cart */}
       <div className="pt-4 border-t border-gray-200 dark:border-gray-800">
-        {isEnquiry ? (
-          <VehicleEnquiryForm
-            productId={product.id}
-            productTitle={product.title}
-          />
-        ) : (
+        <AddToCartButton
+          productId={product.id}
+          variantSku={hasVariants ? selectedSku : undefined}
+          inStock={isAvailable}
+        />
+      </div>
+
+      {/* Sticky Mobile Bar */}
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-gray-950/95 backdrop-blur-md border-t border-gray-200 dark:border-gray-800 p-3 shadow-lg flex items-center justify-between gap-3">
+        <div>
+          <p className="text-xs text-gray-500 dark:text-gray-400">Total Price</p>
+          <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
+            ₹{displayPrice.toLocaleString("en-IN")}
+          </p>
+        </div>
+        <div className="w-48">
           <AddToCartButton
             productId={product.id}
             variantSku={hasVariants ? selectedSku : undefined}
             inStock={isAvailable}
           />
-        )}
-      </div>
-
-      {/* Sticky Mobile Bar */}
-      {!isEnquiry && (
-        <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-gray-950/95 backdrop-blur-md border-t border-gray-200 dark:border-gray-800 p-3 shadow-lg flex items-center justify-between gap-3">
-          <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Total Price</p>
-            <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
-              ₹{displayPrice.toLocaleString("en-IN")}
-            </p>
-          </div>
-          <div className="w-48">
-            <AddToCartButton
-              productId={product.id}
-              variantSku={hasVariants ? selectedSku : undefined}
-              inStock={isAvailable}
-            />
-          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

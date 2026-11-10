@@ -15,7 +15,6 @@ describe("shared constants", () => {
     expect(CATEGORIES).toContain("gadgets");
     expect(CATEGORIES).toContain("clothing");
     expect(CATEGORIES).toContain("electronics");
-    expect(CATEGORIES).toContain("vehicles");
     expect(CATEGORIES).toContain("home");
   });
 
@@ -100,4 +99,3 @@ describe("auth schemas", () => {
     expect(verifyValid.success).toBe(true);
   });
 });
-

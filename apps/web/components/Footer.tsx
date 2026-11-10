@@ -36,7 +36,7 @@ export function Footer() {
               YourStore
             </Link>
             <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed max-w-xs">
-              Everything you need, delivered fast. Quality products across 9 categories —
+              Everything you need, delivered fast. Quality products across 8 categories —
               curated for India.
             </p>
           </div>

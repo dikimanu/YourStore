@@ -29,7 +29,6 @@ export function ProductCard({ product }: ProductCardProps) {
     : PLACEHOLDER_DATA_URI;
 
   const imgAlt = firstImage?.alt || product.title;
-  const isEnquiry = product.listingType === "enquiry";
   const ratingAvg = Math.round(product.ratingAvg ?? 0);
   const ratingCount = product.ratingCount ?? 0;
 
@@ -73,11 +72,6 @@ export function ProductCard({ product }: ProductCardProps) {
             Archived
           </span>
         )}
-        {isEnquiry && (
-          <span className="absolute top-2 right-2 bg-amber-500 text-white text-[11px] font-semibold px-2 py-0.5 rounded">
-            Enquiry
-          </span>
-        )}
       </div>
 
       <div className="flex flex-col flex-1 p-4 gap-2">
@@ -115,15 +109,9 @@ export function ProductCard({ product }: ProductCardProps) {
           <span className="text-base font-extrabold text-blue-700 dark:text-blue-300">
             ₹{product.basePrice.toLocaleString("en-IN")}
           </span>
-          {isEnquiry ? (
-            <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">
-              Enquire
-            </span>
-          ) : (
-            <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
-              View →
-            </span>
-          )}
+          <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
+            View →
+          </span>
         </div>
       </div>
     </Link>

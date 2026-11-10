@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
-  description: "Terms and conditions governing the use of YourStore platform and services.",
+  description: "Read the terms governing the use of YourStore and purchases made through our platform.",
 };
 
 export default function TermsPage() {
@@ -29,14 +29,7 @@ export default function TermsPage() {
         </section>
 
         <section className="space-y-2">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">3. Vehicles &amp; Enquiry Listings</h2>
-          <p>
-            Vehicle listings marked as enquiry-only are not sold directly online. Submissions generate an enquiry or visit booking routed to our dealer partners; no online transaction or vehicle title transfer occurs on this website.
-          </p>
-        </section>
-
-        <section className="space-y-2">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">4. User Accounts</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">3. User Accounts</h2>
           <p>
             You are responsible for maintaining the confidentiality of your credentials. Accounts subjected to excessive automated requests or malicious security testing may be locked or terminated.
           </p>

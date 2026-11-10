@@ -69,8 +69,6 @@ export default async function ProductDetailPage({
   const product = productRes.product;
   const related = (relatedRes?.products ?? []);
 
-  const isEnquiry = product.listingType === "enquiry";
-
   const primaryImage = product.images[0];
   const primaryImageUrl = primaryImage
     ? primaryImage.publicId.startsWith("seed-placeholder/")
@@ -158,7 +156,7 @@ export default async function ProductDetailPage({
           </div>
 
           {/* Pricing, Variant Selector & Add-To-Cart */}
-          <ProductInteractiveSection product={product} isEnquiry={isEnquiry} />
+          <ProductInteractiveSection product={product} />
 
           <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-300 whitespace-pre-line pt-4 border-t border-gray-200 dark:border-gray-800">
             {product.description}

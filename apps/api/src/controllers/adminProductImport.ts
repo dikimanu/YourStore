@@ -198,10 +198,6 @@ function validateRow(
   // ---- isActive ----
   const isActive = parseBool(raw.isActive ?? "", true);
 
-  // ---- Vehicles must be enquiry ----
-  if (categoryRaw === "vehicles" && listingType === "purchasable") {
-    errors.push("vehicles category must have listingType 'enquiry'");
-  }
 
   // ---- images (optional) ----
   const images: Array<{ url: string; publicId: string; alt: string }> = [];
