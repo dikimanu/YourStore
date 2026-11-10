@@ -1,38 +1,20 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { apiClient } from "@/lib/api";
+import { useAuth } from "@/lib/AuthContext";
 import { useToast } from "@/components/Toast";
-import type { User } from "@yourstore/shared";
 
 export function UserMenu() {
   const router = useRouter();
   const pathname = usePathname();
   const { showToast } = useToast();
+  const { user, isLoading, isAuthenticated, logout } = useAuth();
 
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
-
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-
-  const fetchCurrentUser = useCallback(async () => {
-    try {
-      const res = await apiClient<{ user: User }>("/v1/auth/me");
-      setUser(res.user ?? null);
-    } catch {
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchCurrentUser();
-  }, [fetchCurrentUser, pathname]);
 
   // Close dropdown on route change
   useEffect(() => {
@@ -70,8 +52,7 @@ export function UserMenu() {
 
   const handleLogout = async () => {
     try {
-      await apiClient("/api/v1/auth/logout", { method: "POST" });
-      setUser(null);
+      await logout();
       setIsOpen(false);
       showToast("Signed out successfully", "success");
       router.push("/login");
@@ -81,20 +62,27 @@ export function UserMenu() {
     }
   };
 
-  // While checking auth status, render empty container to prevent flicker
-  if (loading) {
-    return <div className="w-16 h-8" />;
+  // Subtle loading skeleton to avoid flashing Log In / Sign Up buttons
+  if (isLoading) {
+    return (
+      <div className="flex items-center gap-2" aria-hidden="true">
+        <div className="w-8 h-8 rounded-full skeleton" />
+      </div>
+    );
   }
 
-  if (!user) {
+  if (!isAuthenticated || !user) {
     return (
-      <div className="flex items-center gap-4">
-        <Link href="/login" className="hover:underline">
+      <div className="flex items-center gap-3">
+        <Link
+          href="/login"
+          className="text-sm font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+        >
           Log In
         </Link>
         <Link
           href="/register"
-          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md transition"
+          className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-3 py-1.5 rounded-lg transition shadow-sm"
         >
           Sign Up
         </Link>

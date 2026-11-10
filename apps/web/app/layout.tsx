@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { ToastProvider } from "../components/Toast";
+import { AuthProvider } from "@/lib/AuthContext";
 import { CartProvider } from "../lib/CartContext";
 import { WishlistProvider } from "../lib/WishlistContext";
 import { RecentlyViewedProvider } from "../lib/RecentlyViewedContext";
@@ -25,6 +26,7 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className="min-h-screen bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100 antialiased flex flex-col justify-between">
         <ToastProvider>
+          <AuthProvider>
           <CartProvider>
             <WishlistProvider>
               <RecentlyViewedProvider>
@@ -37,6 +39,7 @@ export default function RootLayout({
               </RecentlyViewedProvider>
             </WishlistProvider>
           </CartProvider>
+        </AuthProvider>
         </ToastProvider>
       </body>
     </html>

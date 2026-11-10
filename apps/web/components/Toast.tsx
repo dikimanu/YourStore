@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback, useId } from "react";
+import React, { createContext, useContext, useState, useCallback, useId, useRef } from "react";
 
 export type ToastType = "success" | "error" | "info";
 
@@ -21,6 +21,7 @@ const ToastContext = createContext<ToastContextValue | null>(null);
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const idPrefix = useId();
+  const recentToastsRef = useRef<Map<string, number>>(new Map());
 
   const removeToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -28,7 +29,18 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
   const showToast = useCallback(
     (message: string, type: ToastType = "info") => {
-      const id = `${idPrefix}-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+      if (!message) return;
+
+      // Deduplicate identical toasts appearing within 1.5 seconds
+      const now = Date.now();
+      const dedupKey = `${type}:${message}`;
+      const lastShown = recentToastsRef.current.get(dedupKey);
+      if (lastShown && now - lastShown < 1500) {
+        return;
+      }
+      recentToastsRef.current.set(dedupKey, now);
+
+      const id = `${idPrefix}-${now}-${Math.random().toString(36).substring(2, 7)}`;
       setToasts((prev) => [...prev, { id, type, message }]);
 
       // Automatically dismiss after 5 seconds

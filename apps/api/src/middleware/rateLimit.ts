@@ -27,16 +27,23 @@ export const generalLimiter = rateLimit({
 });
 
 /**
- * Tighter rate limiter specifically for authentication routes (login, register, password reset).
- * Allows 10 attempts per 15-minute window per IP to defend against brute force and credential stuffing.
+ * Rate limiter for authentication routes.
+ * Skips /login, /logout, /refresh, and /me to allow unlimited login/logout/session checks.
+ * Has a generous limit (500 attempts) for other endpoints to defend against automated abuse without blocking standard user flows.
  */
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 10,
+  limit: 500,
   standardHeaders: "draft-7",
   legacyHeaders: false,
-  skip: (req: Request) =>
-    process.env["NODE_ENV"] === "test" && !req.headers["x-test-rate-limit"],
+  skip: (req: Request) => {
+    // Explicitly bypass login, logout, refresh, and me endpoints
+    const unconstrainedPaths = ["/login", "/logout", "/refresh", "/me"];
+    if (unconstrainedPaths.some((p) => req.path.endsWith(p))) {
+      return true;
+    }
+    return process.env["NODE_ENV"] === "test" && !req.headers["x-test-rate-limit"];
+  },
   handler: (_req: Request, res: Response) => {
     const response: ApiErrorResponse = {
       error: {

@@ -6,11 +6,13 @@ import { useRouter } from "next/navigation";
 import { RegisterInputSchema, RegisterInput } from "@yourstore/shared";
 import { apiClient, ApiClientError } from "../../lib/api";
 import { useToast } from "@/components/Toast";
+import { useAuth } from "@/lib/AuthContext";
 import { PasswordInput } from "@/components/PasswordInput";
 
 export default function RegisterPage() {
   const router = useRouter();
   const { showToast } = useToast();
+  const { refreshUser } = useAuth();
 
   const [formData, setFormData] = useState<RegisterInput>({
     name: "",
@@ -59,6 +61,7 @@ export default function RegisterPage() {
           body: JSON.stringify(result.data),
         });
 
+        await refreshUser();
         showToast("Registration successful! Welcome to YourStore.", "success");
         router.push("/");
         router.refresh();

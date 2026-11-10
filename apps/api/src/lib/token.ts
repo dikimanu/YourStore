@@ -15,15 +15,15 @@ export interface RefreshTokenPayload {
   jti: string;
 }
 
-// Long-lived persistent session tokens (365 days)
-export const ACCESS_TOKEN_EXPIRY = "365d";
-export const REFRESH_TOKEN_EXPIRY = "365d";
+// Long-lived persistent session tokens (10 years)
+export const ACCESS_TOKEN_EXPIRY = "3650d";
+export const REFRESH_TOKEN_EXPIRY = "3650d";
 
-export const ACCESS_TOKEN_MAX_AGE_MS = 365 * 24 * 60 * 60 * 1000; // 365 days
-export const REFRESH_TOKEN_MAX_AGE_MS = 365 * 24 * 60 * 60 * 1000; // 365 days
+export const ACCESS_TOKEN_MAX_AGE_MS = 10 * 365 * 24 * 60 * 60 * 1000; // 10 years
+export const REFRESH_TOKEN_MAX_AGE_MS = 10 * 365 * 24 * 60 * 60 * 1000; // 10 years
 
 /**
- * Creates a persistent 365-day JWT access token.
+ * Creates a persistent 10-year JWT access token.
  */
 export function generateAccessToken(payload: AccessTokenPayload): string {
   const options: SignOptions = {
@@ -33,7 +33,7 @@ export function generateAccessToken(payload: AccessTokenPayload): string {
 }
 
 /**
- * Creates a persistent 365-day JWT refresh token with a unique jti.
+ * Creates a persistent 10-year JWT refresh token with a unique jti.
  */
 export function generateRefreshToken(userId: string): string {
   const payload: RefreshTokenPayload = {
@@ -68,7 +68,7 @@ export function verifyRefreshToken(token: string): RefreshTokenPayload {
 }
 
 /**
- * Base cookie options for httpOnly, secure, sameSite=Lax.
+ * Base cookie options for httpOnly, secure in production, sameSite=Lax.
  */
 export function getAccessTokenCookieOptions(): CookieOptions {
   return {

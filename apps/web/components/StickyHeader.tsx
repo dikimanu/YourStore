@@ -2,13 +2,14 @@
 
 /**
  * StickyHeader — client component that adds blur/shadow on scroll and
- * a mobile hamburger drawer. The desktop nav and mobile drawer are both
- * fully keyboard-accessible.
+ * a mobile hamburger drawer. Consumes useAuth so mobile and desktop
+ * are always in sync with authentication state.
  */
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { UserMenu } from "@/components/UserMenu";
+import { useAuth } from "@/lib/AuthContext";
 
 const NAV_LINKS = [
   { label: "Products", href: "/products" },
@@ -22,6 +23,7 @@ export function StickyHeader() {
   const [searchQuery, setSearchQuery] = useState("");
   const pathname = usePathname();
   const router = useRouter();
+  const { user, isLoading, isAuthenticated, logout } = useAuth();
   const hamburgerRef = useRef<HTMLButtonElement>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
 
@@ -133,7 +135,7 @@ export function StickyHeader() {
             <UserMenu />
           </div>
 
-          {/* Mobile: hamburger */}
+          {/* Mobile: hamburger + UserMenu */}
           <div className="flex md:hidden items-center gap-2">
             <UserMenu />
             <button
@@ -146,7 +148,6 @@ export function StickyHeader() {
               className="p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             >
               {drawerOpen ? (
-                /* X icon */
                 <svg
                   aria-hidden="true"
                   width="22"
@@ -161,7 +162,6 @@ export function StickyHeader() {
                   <line x1="6" y1="6" x2="18" y2="18" />
                 </svg>
               ) : (
-                /* Hamburger icon */
                 <svg
                   aria-hidden="true"
                   width="22"
@@ -257,6 +257,37 @@ export function StickyHeader() {
           </form>
         </div>
 
+        {/* Drawer user status */}
+        <div className="px-5 py-3 border-b border-gray-200 dark:border-gray-800">
+          {isLoading ? (
+            <div className="h-6 w-32 skeleton rounded" />
+          ) : isAuthenticated && user ? (
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+                {user.name}
+              </span>
+              <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                {user.email}
+              </span>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <Link
+                href="/login"
+                className="flex-1 py-1.5 px-3 text-center text-sm font-medium border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900 transition"
+              >
+                Log In
+              </Link>
+              <Link
+                href="/register"
+                className="flex-1 py-1.5 px-3 text-center text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+              >
+                Sign Up
+              </Link>
+            </div>
+          )}
+        </div>
+
         {/* Drawer nav links */}
         <nav aria-label="Mobile navigation" className="flex flex-col px-5 py-4 gap-1 flex-1">
           {NAV_LINKS.map((link) => (
@@ -272,6 +303,40 @@ export function StickyHeader() {
               {link.label}
             </Link>
           ))}
+
+          {isAuthenticated && (
+            <>
+              <Link
+                href="/orders"
+                className={`px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  pathname === "/orders"
+                    ? "bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400"
+                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                }`}
+              >
+                My Orders
+              </Link>
+              {user?.role === "admin" && (
+                <Link
+                  href="/admin"
+                  className={`px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40`}
+                >
+                  Admin Portal
+                </Link>
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  void logout();
+                  setDrawerOpen(false);
+                  router.push("/login");
+                }}
+                className="text-left px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition mt-2"
+              >
+                Sign Out
+              </button>
+            </>
+          )}
         </nav>
       </div>
     </>

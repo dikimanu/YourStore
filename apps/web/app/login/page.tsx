@@ -7,12 +7,14 @@ import { LoginInputSchema, LoginInput } from "@yourstore/shared";
 import { apiClient, ApiClientError } from "../../lib/api";
 import { useToast } from "../../components/Toast";
 import { useCart } from "@/lib/CartContext";
+import { useAuth } from "@/lib/AuthContext";
 import { PasswordInput } from "@/components/PasswordInput";
 
 export default function LoginPage() {
   const router = useRouter();
   const { showToast } = useToast();
   const { mergeGuestCart } = useCart();
+  const { refreshUser } = useAuth();
 
   const [formData, setFormData] = useState<LoginInput>({
     email: "",
@@ -57,6 +59,7 @@ export default function LoginPage() {
         });
 
         await mergeGuestCart();
+        await refreshUser();
 
         showToast("Logged in successfully! Redirecting...", "success");
         router.push("/");
