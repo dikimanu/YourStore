@@ -18,6 +18,12 @@ export default function AdminEnquiriesPage() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
+  // Reply modal state
+  const [selectedEnquiry, setSelectedEnquiry] = useState<AdminEnquiryItem | null>(null);
+  const [replyText, setReplyText] = useState("");
+  const [replyStatus, setReplyStatus] = useState<"replied" | "resolved">("replied");
+  const [isSubmittingReply, setIsSubmittingReply] = useState(false);
+
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(search);
@@ -59,6 +65,62 @@ export default function AdminEnquiriesPage() {
   useEffect(() => {
     void fetchEnquiries();
   }, [fetchEnquiries]);
+
+  const handleOpenReplyModal = (item: AdminEnquiryItem) => {
+    setSelectedEnquiry(item);
+    setReplyText(item.adminReply || "");
+    setReplyStatus((item.status as "replied" | "resolved") || "replied");
+  };
+
+  const handleCloseReplyModal = () => {
+    setSelectedEnquiry(null);
+    setReplyText("");
+    setIsSubmittingReply(false);
+  };
+
+  const handleSendReply = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedEnquiry) return;
+    if (!replyText.trim()) {
+      showToast("Please enter a reply message", "error");
+      return;
+    }
+
+    setIsSubmittingReply(true);
+    try {
+      await apiClient(`/v1/admin/enquiries/${selectedEnquiry.id}/reply`, {
+        method: "POST",
+        body: JSON.stringify({
+          reply: replyText.trim(),
+          status: replyStatus,
+        }),
+      });
+
+      // Update state dynamically
+      setEnquiries((prev) =>
+        prev.map((item) =>
+          item.id === selectedEnquiry.id
+            ? {
+                ...item,
+                status: replyStatus,
+                adminReply: replyText.trim(),
+                repliedAt: new Date(),
+              }
+            : item,
+        ),
+      );
+
+      showToast("Reply sent successfully", "success");
+      handleCloseReplyModal();
+    } catch (err) {
+      showToast(
+        err instanceof Error ? err.message : "Failed to send reply",
+        "error",
+      );
+    } finally {
+      setIsSubmittingReply(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -134,56 +196,93 @@ export default function AdminEnquiriesPage() {
                   <th className="px-6 py-3.5 font-semibold">Phone</th>
                   <th className="px-6 py-3.5 font-semibold">Target Product</th>
                   <th className="px-6 py-3.5 font-semibold">Type</th>
+                  <th className="px-6 py-3.5 font-semibold">Status</th>
                   <th className="px-6 py-3.5 font-semibold">Preferred Date / Note</th>
                   <th className="px-6 py-3.5 font-semibold text-right">Received</th>
+                  <th className="px-6 py-3.5 font-semibold text-center">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                {enquiries.map((e) => (
-                  <tr key={e.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition">
-                    <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
-                      {e.name}
-                    </td>
-                    <td className="px-6 py-4 font-mono text-xs text-gray-700 dark:text-gray-300">
-                      {e.phone}
-                    </td>
-                    <td className="px-6 py-4">
-                      {e.product.slug ? (
-                        <Link
-                          href={`/products/${e.product.slug}`}
-                          target="_blank"
-                          className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                {enquiries.map((e) => {
+                  const status = e.status || "pending";
+                  return (
+                    <tr key={e.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition">
+                      <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
+                        {e.name}
+                        {e.email && (
+                          <span className="block text-xs font-normal text-gray-500 dark:text-gray-400">
+                            {e.email}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 font-mono text-xs text-gray-700 dark:text-gray-300">
+                        {e.phone}
+                      </td>
+                      <td className="px-6 py-4">
+                        {e.product.slug ? (
+                          <Link
+                            href={`/product/${e.product.slug}`}
+                            target="_blank"
+                            className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                          >
+                            {e.product.title}
+                          </Link>
+                        ) : (
+                          <span className="text-gray-500">{e.product.title}</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                            e.type === "visit"
+                              ? "bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300"
+                              : "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
+                          }`}
                         >
-                          {e.product.title}
-                        </Link>
-                      ) : (
-                        <span className="text-gray-500">{e.product.title}</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                          e.type === "visit"
-                            ? "bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300"
-                            : "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
-                        }`}
-                      >
-                        {e.type === "visit" ? "Showroom Visit" : "General Inquiry"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-xs text-gray-600 dark:text-gray-300 max-w-xs truncate">
-                      {e.preferredDate && (
-                        <span className="block font-medium text-amber-600 dark:text-amber-400 mb-0.5">
-                          Date: {new Date(e.preferredDate).toLocaleDateString("en-IN")}
+                          {e.type === "visit" ? "Showroom Visit" : "General Inquiry"}
                         </span>
-                      )}
-                      <span>{e.message || "No notes"}</span>
-                    </td>
-                    <td className="px-6 py-4 text-right text-xs text-gray-500 dark:text-gray-400">
-                      {new Date(e.createdAt).toLocaleDateString("en-IN")}
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize ${
+                            status === "resolved"
+                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300"
+                              : status === "replied"
+                                ? "bg-teal-100 text-teal-800 dark:bg-teal-950/80 dark:text-teal-300"
+                                : "bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300"
+                          }`}
+                        >
+                          {status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-xs text-gray-600 dark:text-gray-300 max-w-xs">
+                        {e.preferredDate && (
+                          <span className="block font-medium text-amber-600 dark:text-amber-400 mb-0.5">
+                            Date: {new Date(e.preferredDate).toLocaleDateString("en-IN")}
+                          </span>
+                        )}
+                        <span className="line-clamp-2">{e.message || "No notes"}</span>
+                        {e.adminReply && (
+                          <span className="block text-[11px] text-blue-600 dark:text-blue-400 mt-1 italic line-clamp-1">
+                            Reply: {e.adminReply}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-right text-xs text-gray-500 dark:text-gray-400">
+                        {new Date(e.createdAt).toLocaleDateString("en-IN")}
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenReplyModal(e)}
+                          className="px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900 transition shadow-xs"
+                        >
+                          {e.adminReply ? "View / Edit Reply" : "Reply"}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -216,6 +315,141 @@ export default function AdminEnquiriesPage() {
           </div>
         )}
       </div>
+
+      {/* Reply Modal */}
+      {selectedEnquiry && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="reply-modal-title"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
+        >
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 max-w-lg w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-3">
+              <h3 id="reply-modal-title" className="text-lg font-bold text-gray-900 dark:text-white">
+                Reply to Customer Inquiry
+              </h3>
+              <button
+                type="button"
+                onClick={handleCloseReplyModal}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-md text-lg leading-none"
+                aria-label="Close modal"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Customer & Inquiry Details */}
+            <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg space-y-2 text-xs">
+              <div className="flex justify-between">
+                <span className="text-gray-500 dark:text-gray-400">Customer:</span>
+                <span className="font-semibold text-gray-900 dark:text-gray-100">
+                  {selectedEnquiry.name}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500 dark:text-gray-400">Phone:</span>
+                <span className="font-mono text-gray-700 dark:text-gray-300">
+                  {selectedEnquiry.phone}
+                </span>
+              </div>
+              {selectedEnquiry.email && (
+                <div className="flex justify-between">
+                  <span className="text-gray-500 dark:text-gray-400">Email:</span>
+                  <span className="text-gray-700 dark:text-gray-300">{selectedEnquiry.email}</span>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <span className="text-gray-500 dark:text-gray-400">Target Vehicle:</span>
+                <span className="font-medium text-blue-600 dark:text-blue-400">
+                  {selectedEnquiry.product.title || "Kia Seltos X-Line HTX+ Diesel"}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500 dark:text-gray-400">Inquiry Type:</span>
+                <span className="capitalize text-gray-700 dark:text-gray-300">
+                  {selectedEnquiry.type === "visit" ? "Showroom Visit" : "General Inquiry"}
+                </span>
+              </div>
+              {selectedEnquiry.preferredDate && (
+                <div className="flex justify-between">
+                  <span className="text-gray-500 dark:text-gray-400">Visit Date:</span>
+                  <span className="font-medium text-amber-600 dark:text-amber-400">
+                    {new Date(selectedEnquiry.preferredDate).toLocaleDateString("en-IN")}
+                  </span>
+                </div>
+              )}
+              {selectedEnquiry.message && (
+                <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                  <span className="text-gray-500 dark:text-gray-400 block mb-1">
+                    Customer Message:
+                  </span>
+                  <p className="italic text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 p-2 rounded border border-gray-200 dark:border-gray-700">
+                    &ldquo;{selectedEnquiry.message}&rdquo;
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSendReply} className="space-y-4">
+              <div>
+                <label
+                  htmlFor="reply-status"
+                  className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1"
+                >
+                  Status
+                </label>
+                <select
+                  id="reply-status"
+                  value={replyStatus}
+                  onChange={(e) => setReplyStatus(e.target.value as "replied" | "resolved")}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="replied">Replied (Follow-up needed)</option>
+                  <option value="resolved">Resolved (Deal finalized or closed)</option>
+                </select>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="admin-reply-text"
+                  className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1"
+                >
+                  Response / Dealership Notes
+                </label>
+                <textarea
+                  id="admin-reply-text"
+                  rows={4}
+                  required
+                  placeholder="Type your response to the customer or appointment notes here..."
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={handleCloseReplyModal}
+                  disabled={isSubmittingReply}
+                  className="px-4 py-2 text-sm font-medium border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingReply}
+                  className="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition disabled:opacity-50"
+                >
+                  {isSubmittingReply ? "Sending..." : "Send Reply"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

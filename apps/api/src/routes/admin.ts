@@ -83,6 +83,7 @@ router.get("/orders", validateQuery(AdminOrdersQuerySchema), asyncHandler(adminG
 // Customers, Enquiries, Audit Logs management
 router.get("/customers", validateQuery(AdminCustomersQuerySchema), asyncHandler(adminGetCustomers));
 router.get("/enquiries", validateQuery(AdminEnquiriesQuerySchema), asyncHandler(adminGetEnquiries));
+router.post("/enquiries/:id/reply", validateBody(AdminEnquiryReplySchema), asyncHandler(adminReplyEnquiry));
 router.get("/audit-logs", validateQuery(AdminAuditLogsQuerySchema), asyncHandler(adminGetAuditLogs));
 router.patch(
   "/orders/:id/status",

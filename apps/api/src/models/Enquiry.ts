@@ -5,9 +5,13 @@ export interface IEnquiry extends Document {
   user?: Types.ObjectId | undefined;
   name: string;
   phone: string;
+  email?: string | undefined;
   message: string;
   type: "enquiry" | "visit";
   preferredDate?: Date | undefined;
+  status: "pending" | "replied" | "resolved";
+  adminReply?: string | undefined;
+  repliedAt?: Date | undefined;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -36,6 +40,11 @@ const EnquirySchema = new Schema<IEnquiry>(
       required: true,
       trim: true,
     },
+    email: {
+      type: String,
+      required: false,
+      trim: true,
+    },
     message: {
       type: String,
       trim: true,
@@ -48,6 +57,21 @@ const EnquirySchema = new Schema<IEnquiry>(
       default: "enquiry",
     },
     preferredDate: {
+      type: Date,
+      required: false,
+    },
+    status: {
+      type: String,
+      enum: ["pending", "replied", "resolved"],
+      default: "pending",
+      index: true,
+    },
+    adminReply: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    repliedAt: {
       type: Date,
       required: false,
     },

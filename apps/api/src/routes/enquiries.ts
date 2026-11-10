@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { CreateEnquiryInputSchema } from "@yourstore/shared";
-import { optionalAuthenticate } from "../middleware/auth.js";
+import { CreateEnquiryInputSchema, AdminEnquiryReplySchema } from "@yourstore/shared";
+import { optionalAuthenticate, authenticate, requireRole } from "../middleware/auth.js";
 import { validateBody } from "../middleware/validate.js";
 import { enquiryLimiter } from "../middleware/rateLimit.js";
-import { createEnquiry } from "../controllers/enquiries.js";
+import { createEnquiry, adminReplyEnquiry } from "../controllers/enquiries.js";
 import { asyncHandler } from "../lib/asyncHandler.js";
 
 const router = Router();
