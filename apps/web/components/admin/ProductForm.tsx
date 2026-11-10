@@ -34,7 +34,7 @@ export function ProductForm({ initialProduct, isEdit = false }: ProductFormProps
   const [basePrice, setBasePrice] = useState<number>(initialProduct?.basePrice || 999);
   const [stock, setStock] = useState<number>(initialProduct?.stock ?? 10);
   const [listingType, setListingType] = useState<ListingType>(
-    initialProduct?.listingType || (category === "vehicles" ? "enquiry" : "purchasable"),
+    initialProduct?.listingType || "purchasable",
   );
   const [images, setImages] = useState<ProductImage[]>(initialProduct?.images || []);
   const [variants, setVariants] = useState<ProductVariant[]>(initialProduct?.variants || []);
@@ -45,10 +45,6 @@ export function ProductForm({ initialProduct, isEdit = false }: ProductFormProps
 
   const handleCategoryChange = (newCat: Category) => {
     setCategory(newCat);
-    // If vehicle, default listingType to enquiry
-    if (newCat === "vehicles") {
-      setListingType("enquiry");
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

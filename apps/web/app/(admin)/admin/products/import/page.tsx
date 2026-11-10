@@ -231,7 +231,7 @@ export default function AdminProductImportPage() {
         <p className="text-blue-700 dark:text-blue-300">
           <code className="font-mono">title</code>,{" "}
           <code className="font-mono">description</code>,{" "}
-          <code className="font-mono">category</code> (gadgets | clothing | electronics | vehicles |
+          <code className="font-mono">category</code> (gadgets | clothing | electronics |
           home | foods | books | health | industrial), <code className="font-mono">brand</code>,{" "}
           <code className="font-mono">basePrice</code>
         </p>
@@ -243,10 +243,6 @@ export default function AdminProductImportPage() {
           <code className="font-mono">imagePublicId</code>,{" "}
           <code className="font-mono">attributes</code> (JSON object),{" "}
           <code className="font-mono">variants</code> (JSON array)
-        </p>
-        <p className="text-blue-700 dark:text-blue-300 font-medium">
-          ⚠ Vehicles must use <code className="font-mono">listingType=enquiry</code>. All rows must
-          be valid or the whole import is rejected.
         </p>
         <button
           type="button"
